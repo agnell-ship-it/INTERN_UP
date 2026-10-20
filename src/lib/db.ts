@@ -125,8 +125,93 @@ function initializeDefaultDatabase(): LocalDatabaseState {
   };
 }
 
-// Read database
-function readDb(): LocalDatabaseState {
+// Cloud Upstash Redis configuration for real-time multi-tenant serverless persistence across Vercel instances
+const REDIS_URL =
+  process.env.UPSTASH_REDIS_REST_URL ||
+  'https://accepted-quagga-165969.upstash.io';
+const REDIS_TOKEN =
+  process.env.UPSTASH_REDIS_REST_TOKEN ||
+  'gQAAAAAAAohRAQIgcDI4MTNlMTgyMTExNTY0ZjIzYjFiYTVlNWFhZDYzNzUxOA';
+
+async function redisCommand(command: any[]): Promise<any> {
+  if (!REDIS_URL || !REDIS_TOKEN) return null;
+  try {
+    const res = await fetch(REDIS_URL, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${REDIS_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(command),
+      cache: 'no-store',
+    });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch (err) {
+    console.error('Redis command error:', err);
+    return null;
+  }
+}
+
+function ensureAdminAndSeed(parsed: LocalDatabaseState): boolean {
+  let modified = false;
+  if (!parsed.domains || parsed.domains.length < 13) {
+    const defaultState = initializeDefaultDatabase();
+    parsed.domains = defaultState.domains;
+    parsed.tasks = defaultState.tasks;
+    modified = true;
+  }
+
+  if (!parsed.site_settings) {
+    parsed.site_settings = initializeDefaultDatabase().site_settings;
+    modified = true;
+  }
+
+  if (!process.env.VITEST) {
+    const adminEmail = COMPANY_INFO.initialAdminEmail.toLowerCase().trim();
+    let adminProfile = parsed.profiles.find((p) => p.email.toLowerCase() === adminEmail);
+    if (!adminProfile) {
+      adminProfile = {
+        id: 'usr_owner_target_1',
+        email: adminEmail,
+        full_name: 'Agnel Vishwak',
+        role: 'admin',
+        email_verified: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      parsed.profiles.unshift(adminProfile);
+      modified = true;
+    } else if (adminProfile.role !== 'admin') {
+      adminProfile.role = 'admin';
+      modified = true;
+    }
+
+    parsed.auth_credentials = parsed.auth_credentials || [];
+    const adminCredIdx = parsed.auth_credentials.findIndex((c) => c.user_id === adminProfile!.id);
+    const targetHash =
+      'fabaa29ce40c20817a68df52fd765c1fb39ee17e5a57379edb26171bfcdaf9a181162f9641a8f92ce4ab26a0f1444a2b0cacb9868de0ffcab64a4b388c05ae4c';
+    const targetSalt = 'a1b2c3d4e5f60718293a4b5c6d7e8f90';
+
+    if (adminCredIdx === -1) {
+      parsed.auth_credentials.push({
+        user_id: adminProfile.id,
+        salt: targetSalt,
+        hash: targetHash,
+      });
+      modified = true;
+    } else if (parsed.auth_credentials[adminCredIdx].hash !== targetHash) {
+      parsed.auth_credentials[adminCredIdx].salt = targetSalt;
+      parsed.auth_credentials[adminCredIdx].hash = targetHash;
+      modified = true;
+    }
+  }
+
+  return modified;
+}
+
+// Synchronous local file read (fallback & test environment)
+function readDbSync(): LocalDatabaseState {
   try {
     if (!fs.existsSync(DATA_DIR)) {
       fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -137,7 +222,9 @@ function readDb(): LocalDatabaseState {
         try {
           const seedContent = fs.readFileSync(SOURCE_DB_FILE, 'utf-8');
           fs.writeFileSync(DB_FILE, seedContent, 'utf-8');
-          return JSON.parse(seedContent);
+          const parsed = JSON.parse(seedContent);
+          ensureAdminAndSeed(parsed);
+          return parsed;
         } catch {
           const initial = initializeDefaultDatabase();
           fs.writeFileSync(DB_FILE, JSON.stringify(initial, null, 2), 'utf-8');
@@ -152,65 +239,10 @@ function readDb(): LocalDatabaseState {
 
     const data = fs.readFileSync(DB_FILE, 'utf-8');
     const parsed: LocalDatabaseState = JSON.parse(data);
-
-    // Ensure all 13 domains and 65 tasks are seeded idempotently if missing
-    let modified = false;
-    if (!parsed.domains || parsed.domains.length < 13) {
-      const defaultState = initializeDefaultDatabase();
-      parsed.domains = defaultState.domains;
-      parsed.tasks = defaultState.tasks;
-      modified = true;
-    }
-
-    if (!parsed.site_settings) {
-      parsed.site_settings = initializeDefaultDatabase().site_settings;
-      modified = true;
-    }
-
-    // Ensure designated administrator profile and credentials for agnelvishwak02@gmail.com (Password: Agnel@2007)
-    if (!process.env.VITEST) {
-      const adminEmail = COMPANY_INFO.initialAdminEmail.toLowerCase().trim();
-      let adminProfile = parsed.profiles.find((p) => p.email.toLowerCase() === adminEmail);
-      if (!adminProfile) {
-        adminProfile = {
-          id: 'usr_owner_target_1',
-          email: adminEmail,
-          full_name: 'Agnel Vishwak',
-          role: 'admin',
-          email_verified: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        };
-        parsed.profiles.unshift(adminProfile);
-        modified = true;
-      } else if (adminProfile.role !== 'admin') {
-        adminProfile.role = 'admin';
-        modified = true;
-      }
-
-      parsed.auth_credentials = parsed.auth_credentials || [];
-      const adminCredIdx = parsed.auth_credentials.findIndex((c) => c.user_id === adminProfile!.id);
-      const targetHash = 'fabaa29ce40c20817a68df52fd765c1fb39ee17e5a57379edb26171bfcdaf9a181162f9641a8f92ce4ab26a0f1444a2b0cacb9868de0ffcab64a4b388c05ae4c';
-      const targetSalt = 'a1b2c3d4e5f60718293a4b5c6d7e8f90';
-
-      if (adminCredIdx === -1) {
-        parsed.auth_credentials.push({
-          user_id: adminProfile.id,
-          salt: targetSalt,
-          hash: targetHash,
-        });
-        modified = true;
-      } else if (parsed.auth_credentials[adminCredIdx].hash !== targetHash) {
-        parsed.auth_credentials[adminCredIdx].salt = targetSalt;
-        parsed.auth_credentials[adminCredIdx].hash = targetHash;
-        modified = true;
-      }
-    }
-
+    const modified = ensureAdminAndSeed(parsed);
     if (modified) {
       writeDb(parsed);
     }
-
     return parsed;
   } catch (err) {
     console.error('Error reading local database:', err);
@@ -218,7 +250,12 @@ function readDb(): LocalDatabaseState {
   }
 }
 
-// Write database
+// Backward-compatible synchronous read
+function readDb(): LocalDatabaseState {
+  return readDbSync();
+}
+
+// Synchronous local file write with background cloud sync
 function writeDb(data: LocalDatabaseState) {
   try {
     if (!fs.existsSync(DATA_DIR)) {
@@ -228,24 +265,80 @@ function writeDb(data: LocalDatabaseState) {
   } catch (err) {
     console.error('Error writing local database:', err);
   }
+
+  if (!process.env.VITEST && REDIS_URL && REDIS_TOKEN) {
+    redisCommand(['SET', 'internup_db_state', JSON.stringify(data)]).catch((err) => {
+      console.error('Background Redis sync error:', err);
+    });
+  }
+}
+
+// Asynchronous cloud database read (Upstash Redis) with local file fallback
+async function readDbAsync(): Promise<LocalDatabaseState> {
+  if (process.env.VITEST) {
+    return readDbSync();
+  }
+
+  if (REDIS_URL && REDIS_TOKEN) {
+    try {
+      const res = await redisCommand(['GET', 'internup_db_state']);
+      if (res && res.result) {
+        const parsed: LocalDatabaseState =
+          typeof res.result === 'string' ? JSON.parse(res.result) : res.result;
+        const modified = ensureAdminAndSeed(parsed);
+        if (modified) {
+          await writeDbAsync(parsed);
+        }
+        return parsed;
+      } else {
+        const initial = readDbSync();
+        await redisCommand(['SET', 'internup_db_state', JSON.stringify(initial)]);
+        return initial;
+      }
+    } catch (err) {
+      console.error('Upstash Redis read failed, falling back to local file:', err);
+    }
+  }
+
+  return readDbSync();
+}
+
+// Asynchronous cloud database write (Upstash Redis + local backup)
+async function writeDbAsync(data: LocalDatabaseState): Promise<void> {
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
+  } catch (err) {
+    console.error('Error writing local file:', err);
+  }
+
+  if (!process.env.VITEST && REDIS_URL && REDIS_TOKEN) {
+    try {
+      await redisCommand(['SET', 'internup_db_state', JSON.stringify(data)]);
+    } catch (err) {
+      console.error('Error syncing to Upstash Redis:', err);
+    }
+  }
 }
 
 // Database repository methods
 export const db = {
   // --- Profiles ---
   async getProfileById(id: string): Promise<Profile | null> {
-    const state = readDb();
+    const state = await readDbAsync();
     return state.profiles.find((p) => p.id === id) || null;
   },
 
   async getProfileByEmail(email: string): Promise<Profile | null> {
-    const state = readDb();
+    const state = await readDbAsync();
     const cleanEmail = email.trim().toLowerCase();
     return state.profiles.find((p) => p.email.toLowerCase() === cleanEmail) || null;
   },
 
   async createProfile(profile: Omit<Profile, 'created_at' | 'updated_at'>): Promise<Profile> {
-    const state = readDb();
+    const state = await readDbAsync();
     const now = getCurrentTimestamp();
     const newProfile: Profile = {
       ...profile,
@@ -254,12 +347,12 @@ export const db = {
       updated_at: now,
     };
     state.profiles.push(newProfile);
-    writeDb(state);
+    await writeDbAsync(state);
     return newProfile;
   },
 
   async updateProfile(id: string, updates: Partial<Profile>): Promise<Profile | null> {
-    const state = readDb();
+    const state = await readDbAsync();
     const idx = state.profiles.findIndex((p) => p.id === id);
     if (idx === -1) return null;
 
@@ -273,34 +366,34 @@ export const db = {
       ...safeUpdates,
       updated_at: getCurrentTimestamp(),
     };
-    writeDb(state);
+    await writeDbAsync(state);
     return state.profiles[idx];
   },
 
   async getAllStudents(): Promise<Profile[]> {
-    const state = readDb();
+    const state = await readDbAsync();
     return state.profiles.filter((p) => p.role === 'student');
   },
 
   // --- Auth Credentials ---
   async saveUserCredentials(userId: string, salt: string, hash: string): Promise<void> {
-    const state = readDb();
+    const state = await readDbAsync();
     const existingIdx = state.auth_credentials.findIndex((c) => c.user_id === userId);
     if (existingIdx !== -1) {
       state.auth_credentials[existingIdx] = { user_id: userId, salt, hash };
     } else {
       state.auth_credentials.push({ user_id: userId, salt, hash });
     }
-    writeDb(state);
+    await writeDbAsync(state);
   },
 
   async getUserCredentials(userId: string): Promise<AuthCredential | null> {
-    const state = readDb();
+    const state = await readDbAsync();
     return state.auth_credentials.find((c) => c.user_id === userId) || null;
   },
 
   async savePasswordResetToken(email: string, token: string, expiresInMinutes = 60): Promise<void> {
-    const state = readDb();
+    const state = await readDbAsync();
     const expires_at = Date.now() + expiresInMinutes * 60 * 1000;
     // Remove previous tokens for this email
     state.password_reset_tokens = state.password_reset_tokens.filter((t) => t.email !== email.toLowerCase().trim());
@@ -309,11 +402,11 @@ export const db = {
       token,
       expires_at,
     });
-    writeDb(state);
+    await writeDbAsync(state);
   },
 
   async verifyAndResetPassword(token: string, salt: string, hash: string): Promise<{ success: boolean; message: string }> {
-    const state = readDb();
+    const state = await readDbAsync();
     const found = state.password_reset_tokens.find((t) => t.token === token);
     if (!found) {
       return { success: false, message: 'Invalid or expired password reset link.' };
@@ -338,14 +431,14 @@ export const db = {
 
     // Invalidate used token
     state.password_reset_tokens = state.password_reset_tokens.filter((t) => t.token !== token);
-    writeDb(state);
+    await writeDbAsync(state);
 
     return { success: true, message: 'Password has been successfully updated.' };
   },
 
   // --- Initial Admin Bootstrap ---
   async bootstrapAdmin(targetEmail: string, actorId: string): Promise<{ success: boolean; message: string }> {
-    const state = readDb();
+    const state = await readDbAsync();
     const designated = COMPANY_INFO.initialAdminEmail.toLowerCase().trim();
     const cleanTarget = targetEmail.toLowerCase().trim();
 
@@ -392,7 +485,7 @@ export const db = {
       created_at: getCurrentTimestamp(),
     });
 
-    writeDb(state);
+    await writeDbAsync(state);
     return {
       success: true,
       message: `Account ${cleanTarget} has been promoted to Administrator, and the bootstrap procedure is now permanently closed.`,
@@ -401,7 +494,7 @@ export const db = {
 
   // --- Domains ---
   async getAllDomains(onlyActive = true): Promise<Domain[]> {
-    const state = readDb();
+    const state = await readDbAsync();
     let list = state.domains;
     if (onlyActive) {
       list = list.filter((d) => d.is_active);
@@ -410,17 +503,17 @@ export const db = {
   },
 
   async getDomainById(id: string): Promise<Domain | null> {
-    const state = readDb();
+    const state = await readDbAsync();
     return state.domains.find((d) => d.id === id) || null;
   },
 
   async getDomainBySlug(slug: string): Promise<Domain | null> {
-    const state = readDb();
+    const state = await readDbAsync();
     return state.domains.find((d) => d.slug === slug) || null;
   },
 
   async updateDomain(id: string, updates: Partial<Domain>, adminId: string): Promise<Domain | null> {
-    const state = readDb();
+    const state = await readDbAsync();
     const idx = state.domains.findIndex((d) => d.id === id);
     if (idx === -1) return null;
 
@@ -440,7 +533,7 @@ export const db = {
       created_at: getCurrentTimestamp(),
     });
 
-    writeDb(state);
+    await writeDbAsync(state);
     return state.domains[idx];
   },
 
@@ -448,7 +541,7 @@ export const db = {
     data: Omit<Domain, 'id' | 'created_at' | 'updated_at'>,
     adminId: string
   ): Promise<Domain> {
-    const state = readDb();
+    const state = await readDbAsync();
     const now = getCurrentTimestamp();
     const newDomain: Domain = {
       ...data,
@@ -468,13 +561,13 @@ export const db = {
       created_at: now,
     });
 
-    writeDb(state);
+    await writeDbAsync(state);
     return newDomain;
   },
 
   // --- Tasks ---
   async getTasksByDomainId(domainId: string, onlyActive = true): Promise<Task[]> {
-    const state = readDb();
+    const state = await readDbAsync();
     let tasks = state.tasks.filter((t) => t.domain_id === domainId);
     if (onlyActive) {
       tasks = tasks.filter((t) => t.is_active);
@@ -483,12 +576,12 @@ export const db = {
   },
 
   async getTaskById(id: string): Promise<Task | null> {
-    const state = readDb();
+    const state = await readDbAsync();
     return state.tasks.find((t) => t.id === id) || null;
   },
 
   async updateTask(id: string, updates: Partial<Task>, adminId: string): Promise<Task | null> {
-    const state = readDb();
+    const state = await readDbAsync();
     const idx = state.tasks.findIndex((t) => t.id === id);
     if (idx === -1) return null;
 
@@ -508,7 +601,7 @@ export const db = {
       created_at: getCurrentTimestamp(),
     });
 
-    writeDb(state);
+    await writeDbAsync(state);
     return state.tasks[idx];
   },
 
@@ -516,7 +609,7 @@ export const db = {
     data: Omit<Task, 'id' | 'created_at' | 'updated_at'>,
     adminId: string
   ): Promise<Task> {
-    const state = readDb();
+    const state = await readDbAsync();
     const now = getCurrentTimestamp();
     const newTask: Task = {
       ...data,
@@ -536,13 +629,13 @@ export const db = {
       created_at: now,
     });
 
-    writeDb(state);
+    await writeDbAsync(state);
     return newTask;
   },
 
   // --- Enrollments ---
   async getActiveEnrollmentByStudentId(studentId: string): Promise<Enrollment | null> {
-    const state = readDb();
+    const state = await readDbAsync();
     let enrollment = state.enrollments.find(
       (e) => e.student_id === studentId && (e.status === 'active' || e.status === 'completed')
     );
@@ -555,7 +648,7 @@ export const db = {
           enrollment = progress.enrollment;
           if (!state.enrollments.some((e) => e.id === enrollment!.id)) {
             state.enrollments.push(enrollment);
-            writeDb(state);
+            await writeDbAsync(state);
           }
         }
       } catch {
@@ -571,7 +664,7 @@ export const db = {
   },
 
   async getEnrollmentById(id: string): Promise<Enrollment | null> {
-    const state = readDb();
+    const state = await readDbAsync();
     let enrollment = state.enrollments.find((e) => e.id === id);
 
     if (!enrollment) {
@@ -582,7 +675,7 @@ export const db = {
           enrollment = progress.enrollment;
           if (!state.enrollments.some((e) => e.id === enrollment!.id)) {
             state.enrollments.push(enrollment);
-            writeDb(state);
+            await writeDbAsync(state);
           }
         }
       } catch {
@@ -598,7 +691,7 @@ export const db = {
   },
 
   async createEnrollment(studentId: string, domainId: string): Promise<Enrollment> {
-    const state = readDb();
+    const state = await readDbAsync();
 
     // Check for existing active enrollment
     const existing = state.enrollments.find(
@@ -630,7 +723,7 @@ export const db = {
     };
 
     state.enrollments.push(newEnrollment);
-    writeDb(state);
+    await writeDbAsync(state);
     return { ...newEnrollment, domain };
   },
 
@@ -640,7 +733,7 @@ export const db = {
     adminId: string,
     reason: string
   ): Promise<Enrollment | null> {
-    const state = readDb();
+    const state = await readDbAsync();
     const idx = state.enrollments.findIndex((e) => e.id === enrollmentId);
     if (idx === -1) return null;
 
@@ -661,12 +754,12 @@ export const db = {
       created_at: getCurrentTimestamp(),
     });
 
-    writeDb(state);
+    await writeDbAsync(state);
     return state.enrollments[idx];
   },
 
   async getAllEnrollments(): Promise<Enrollment[]> {
-    const state = readDb();
+    const state = await readDbAsync();
     return state.enrollments.map((e) => ({
       ...e,
       domain: state.domains.find((d) => d.id === e.domain_id),
@@ -676,7 +769,7 @@ export const db = {
 
   // --- Task Submissions ---
   async getTaskSubmissionsByEnrollmentId(enrollmentId: string): Promise<TaskSubmission[]> {
-    const state = readDb();
+    const state = await readDbAsync();
     let submissions = state.task_submissions
       .filter((s) => s.enrollment_id === enrollmentId)
       .map((s) => ({
@@ -709,7 +802,7 @@ export const db = {
     githubUrl: string,
     notes?: string
   ): Promise<TaskSubmission> {
-    const state = readDb();
+    const state = await readDbAsync();
     const now = getCurrentTimestamp();
 
     // Verify enrollment ownership
@@ -758,13 +851,13 @@ export const db = {
       state.enrollments[enrollmentIdx].updated_at = now;
     }
 
-    writeDb(state);
+    await writeDbAsync(state);
     return submission;
   },
 
   // --- LinkedIn Submissions ---
   async getLinkedInSubmissionByEnrollmentId(enrollmentId: string): Promise<LinkedInSubmission | null> {
-    const state = readDb();
+    const state = await readDbAsync();
     const submission = state.linkedin_submissions.find((s) => s.enrollment_id === enrollmentId);
     if (submission) return submission;
 
@@ -787,7 +880,7 @@ export const db = {
     postUrl: string,
     notes?: string
   ): Promise<LinkedInSubmission> {
-    const state = readDb();
+    const state = await readDbAsync();
     const now = getCurrentTimestamp();
 
     const existingIdx = state.linkedin_submissions.findIndex(
@@ -821,7 +914,7 @@ export const db = {
       state.linkedin_submissions.push(sub);
     }
 
-    writeDb(state);
+    await writeDbAsync(state);
     return sub;
   },
 
@@ -831,7 +924,7 @@ export const db = {
     adminId: string,
     rejectionReason?: string
   ): Promise<LinkedInSubmission | null> {
-    const state = readDb();
+    const state = await readDbAsync();
     const idx = state.linkedin_submissions.findIndex((s) => s.id === submissionId);
     if (idx === -1) return null;
 
@@ -855,12 +948,12 @@ export const db = {
       created_at: now,
     });
 
-    writeDb(state);
+    await writeDbAsync(state);
     return state.linkedin_submissions[idx];
   },
 
   async getAllPendingLinkedIn(): Promise<(LinkedInSubmission & { student?: Profile; domain?: Domain })[]> {
-    const state = readDb();
+    const state = await readDbAsync();
     return state.linkedin_submissions
       .filter((s) => s.status === 'pending_review')
       .map((s) => {
@@ -873,7 +966,7 @@ export const db = {
 
   // --- Payments ---
   async getPaymentByEnrollmentId(enrollmentId: string): Promise<Payment | null> {
-    const state = readDb();
+    const state = await readDbAsync();
     const payment = state.payments.find((p) => p.enrollment_id === enrollmentId);
     if (payment) return payment;
 
@@ -897,7 +990,7 @@ export const db = {
     paymentDate: string,
     screenshotUrl?: string
   ): Promise<Payment> {
-    const state = readDb();
+    const state = await readDbAsync();
     const now = getCurrentTimestamp();
 
     // Verify enrollment
@@ -944,7 +1037,7 @@ export const db = {
       state.payments.push(paymentRecord);
     }
 
-    writeDb(state);
+    await writeDbAsync(state);
     return paymentRecord;
   },
 
@@ -954,7 +1047,7 @@ export const db = {
     adminId: string,
     rejectionReason?: string
   ): Promise<Payment | null> {
-    const state = readDb();
+    const state = await readDbAsync();
     const idx = state.payments.findIndex((p) => p.id === paymentId);
     if (idx === -1) return null;
 
@@ -978,12 +1071,12 @@ export const db = {
       created_at: now,
     });
 
-    writeDb(state);
+    await writeDbAsync(state);
     return state.payments[idx];
   },
 
   async getAllPayments(): Promise<(Payment & { student?: Profile; domain?: Domain })[]> {
-    const state = readDb();
+    const state = await readDbAsync();
     return state.payments.map((p) => {
       const enrollment = state.enrollments.find((e) => e.id === p.enrollment_id);
       const student = state.profiles.find((pr) => pr.id === p.student_id);
@@ -994,12 +1087,12 @@ export const db = {
 
   // --- Offer Letters ---
   async getOfferLetterByEnrollmentId(enrollmentId: string): Promise<OfferLetterRecord | null> {
-    const state = readDb();
+    const state = await readDbAsync();
     return state.offer_letters.find((o) => o.enrollment_id === enrollmentId) || null;
   },
 
   async recordOfferLetterDownload(enrollmentId: string, studentId: string): Promise<OfferLetterRecord> {
-    const state = readDb();
+    const state = await readDbAsync();
     const existing = state.offer_letters.find((o) => o.enrollment_id === enrollmentId);
     if (existing) return existing;
 
@@ -1012,18 +1105,18 @@ export const db = {
     };
 
     state.offer_letters.push(record);
-    writeDb(state);
+    await writeDbAsync(state);
     return record;
   },
 
   // --- Certificates & Eligibility ---
   async getCertificateByEnrollmentId(enrollmentId: string): Promise<Certificate | null> {
-    const state = readDb();
+    const state = await readDbAsync();
     return state.certificates.find((c) => c.enrollment_id === enrollmentId) || null;
   },
 
   async getCertificateById(certificateId: string): Promise<Certificate | null> {
-    const state = readDb();
+    const state = await readDbAsync();
     return (
       state.certificates.find(
         (c) => c.certificate_id.toLowerCase() === certificateId.toLowerCase().trim()
@@ -1035,7 +1128,7 @@ export const db = {
     enrollmentId: string,
     adminOrSystemId: string
   ): Promise<{ certificate: Certificate; newlyIssued: boolean }> {
-    const state = readDb();
+    const state = await readDbAsync();
     const existing = state.certificates.find((c) => c.enrollment_id === enrollmentId);
     if (existing && existing.status === 'issued') {
       return { certificate: existing, newlyIssued: false };
@@ -1103,7 +1196,7 @@ export const db = {
       created_at: now,
     });
 
-    writeDb(state);
+    await writeDbAsync(state);
     return { certificate: cert, newlyIssued: true };
   },
 
@@ -1112,7 +1205,7 @@ export const db = {
     reason: string,
     adminId: string
   ): Promise<Certificate | null> {
-    const state = readDb();
+    const state = await readDbAsync();
     const idx = state.certificates.findIndex((c) => c.id === certificateId || c.certificate_id === certificateId);
     if (idx === -1) return null;
 
@@ -1131,23 +1224,23 @@ export const db = {
       created_at: now,
     });
 
-    writeDb(state);
+    await writeDbAsync(state);
     return state.certificates[idx];
   },
 
   async getAllCertificates(): Promise<Certificate[]> {
-    const state = readDb();
+    const state = await readDbAsync();
     return state.certificates;
   },
 
   // --- Site Settings ---
   async getSiteSettings(): Promise<SiteSettings> {
-    const state = readDb();
+    const state = await readDbAsync();
     return state.site_settings;
   },
 
   async updateSiteSettings(updates: Partial<SiteSettings>, adminId: string): Promise<SiteSettings> {
-    const state = readDb();
+    const state = await readDbAsync();
     state.site_settings = {
       ...state.site_settings,
       ...updates,
@@ -1164,7 +1257,7 @@ export const db = {
       created_at: getCurrentTimestamp(),
     });
 
-    writeDb(state);
+    await writeDbAsync(state);
     return state.site_settings;
   },
 
@@ -1176,7 +1269,7 @@ export const db = {
     targetId: string,
     details?: Record<string, unknown>
   ): Promise<AdminAuditLog> {
-    const state = readDb();
+    const state = await readDbAsync();
     const log: AdminAuditLog = {
       id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
       actor_id: actorId,
@@ -1187,12 +1280,12 @@ export const db = {
       created_at: getCurrentTimestamp(),
     };
     state.admin_audit_logs.push(log);
-    writeDb(state);
+    await writeDbAsync(state);
     return log;
   },
 
   async getAuditLogs(limit = 100): Promise<AdminAuditLog[]> {
-    const state = readDb();
+    const state = await readDbAsync();
     return state.admin_audit_logs
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
       .slice(0, limit);
@@ -1200,7 +1293,7 @@ export const db = {
 
   // --- Overview & Reports ---
   async getAdminStats() {
-    const state = readDb();
+    const state = await readDbAsync();
     const totalStudents = state.profiles.filter((p) => p.role === 'student').length;
     const activeEnrollments = state.enrollments.filter((e) => e.status === 'active').length;
     const completedEnrollments = state.enrollments.filter((e) => e.status === 'completed').length;
