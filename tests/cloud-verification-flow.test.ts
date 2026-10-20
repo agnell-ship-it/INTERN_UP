@@ -1,0 +1,114 @@
+import { describe, it, expect } from 'vitest';
+import { db } from '@/lib/db';
+import { calculateCertificateEligibility } from '@/lib/eligibility';
+
+describe('End-to-End Verification and Payment Flow', () => {
+  it('handles full lifecycle: task submission -> linkedin verification -> payment verification -> certificate eligibility', async () => {
+    // 1. Create a test student and enrollment
+    const uniqueId = `usr_test_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
+    const student = await db.createProfile({
+      id: uniqueId,
+      email: `${uniqueId}@example.com`,
+      full_name: 'Verification Test Student',
+      phone: '+91 9999988888',
+      role: 'student',
+      email_verified: true,
+    });
+    expect(student.email).toBe(`${uniqueId}@example.com`);
+
+    const domain = (await db.getAllDomains())[0];
+    const enrollment = await db.createEnrollment(student.id, domain.id);
+    expect(enrollment.id).toBeDefined();
+
+    // 2. Submit all 5 tasks
+    const tasks = await db.getTasksByDomainId(domain.id);
+    for (const t of tasks) {
+      await db.submitTask(
+        enrollment.id,
+        t.id,
+        student.id,
+        `https://github.com/student/task-${t.display_order}`
+      );
+    }
+    const taskSubs = await db.getTaskSubmissionsByEnrollmentId(enrollment.id);
+    expect(taskSubs.length).toBe(5);
+
+    // 3. Student submits LinkedIn announcement
+    const liSubmission = await db.submitLinkedIn(
+      enrollment.id,
+      student.id,
+      'https://www.linkedin.com/posts/test_verify_announcement_123'
+    );
+    expect(liSubmission.status).toBe('pending_review');
+
+    // 4. Admin checks pending LinkedIn submissions
+    const pendingLinkedIn = await db.getAllPendingLinkedIn();
+    const adminFoundLi = pendingLinkedIn.find((l) => l.id === liSubmission.id);
+    expect(adminFoundLi).toBeDefined();
+    expect(adminFoundLi?.post_url).toBe(
+      'https://www.linkedin.com/posts/test_verify_announcement_123'
+    );
+
+    // 5. Admin approves LinkedIn announcement
+    const approvedLi = await db.reviewLinkedIn(
+      liSubmission.id,
+      'approved',
+      'usr_owner_target_1'
+    );
+    expect(approvedLi?.status).toBe('approved');
+
+    // Verify student sees approved status
+    const studentSeenLi = await db.getLinkedInSubmissionByEnrollmentId(enrollment.id);
+    expect(studentSeenLi?.status).toBe('approved');
+
+    // 6. Student submits ₹100 direct UPI payment
+    const payment = await db.submitPayment(
+      enrollment.id,
+      student.id,
+      'UTR987654321098',
+      '2026-10-20'
+    );
+    expect(payment.status).toBe('pending_verification');
+    expect(payment.upi_reference).toBe('UTR987654321098');
+
+    // 7. Admin checks pending payments
+    const payments = await db.getAllPayments();
+    const adminFoundPayment = payments.find((p) => p.id === payment.id);
+    expect(adminFoundPayment).toBeDefined();
+    expect(adminFoundPayment?.status).toBe('pending_verification');
+
+    // 8. Admin approves payment
+    const approvedPayment = await db.reviewPayment(
+      payment.id,
+      'approved',
+      'usr_owner_target_1'
+    );
+    expect(approvedPayment?.status).toBe('approved');
+
+    // Verify student sees approved payment
+    const studentSeenPayment = await db.getPaymentByEnrollmentId(enrollment.id);
+    expect(studentSeenPayment?.status).toBe('approved');
+
+    // 9. Eligibility calculation
+    const eligibility = calculateCertificateEligibility({
+      enrollment,
+      linkedInSubmission: studentSeenLi,
+      taskSubmissions: taskSubs,
+      payment: studentSeenPayment,
+    });
+    expect(eligibility.isEligible).toBe(true);
+    expect(eligibility.checklist.hasActiveEnrollment).toBe(true);
+    expect(eligibility.checklist.linkedInApproved).toBe(true);
+    expect(eligibility.checklist.allTasksSubmitted).toBe(true);
+    expect(eligibility.checklist.paymentApproved).toBe(true);
+
+    // 10. Generate / issue certificate
+    const { certificate: cert } = await db.issueCertificate(enrollment.id, student.id);
+    expect(cert.certificate_id).toMatch(/^INUP-2026-/);
+    expect(cert.status).toBe('issued');
+
+    const retrievedCert = await db.getCertificateById(cert.certificate_id);
+    expect(retrievedCert).toBeDefined();
+    expect(retrievedCert?.student_name).toBe(student.full_name);
+  });
+});

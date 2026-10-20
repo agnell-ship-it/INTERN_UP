@@ -26,6 +26,8 @@ import { DashboardProfileSection } from '@/components/DashboardProfileSection';
 import { DashboardStatusBanner } from '@/components/DashboardStatusBanner';
 import { DocumentActionButtons } from '@/components/DocumentActionButtons';
 import { LinkedInShareCertificate } from '@/components/LinkedInShareCertificate';
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();

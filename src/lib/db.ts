@@ -51,7 +51,7 @@ const DATA_DIR = IS_VERCEL
   : path.join(process.cwd(), 'data');
 const SOURCE_DB_FILE = path.join(process.cwd(), 'data', 'local-db.json');
 const DB_FILE = process.env.VITEST
-  ? path.join(DATA_DIR, 'test-db.json')
+  ? path.join(DATA_DIR, `test-db-${process.env.VITEST_POOL_ID || process.pid}.json`)
   : path.join(DATA_DIR, 'local-db.json');
 
 function initializeDefaultDatabase(): LocalDatabaseState {
@@ -147,7 +147,10 @@ async function redisCommand(command: any[]): Promise<any> {
     });
     if (!res.ok) return null;
     return await res.json();
-  } catch (err) {
+  } catch (err: any) {
+    if (err && (err.digest === 'DYNAMIC_SERVER_USAGE' || err.message?.includes('Dynamic server usage'))) {
+      throw err;
+    }
     console.error('Redis command error:', err);
     return null;
   }
@@ -295,7 +298,10 @@ async function readDbAsync(): Promise<LocalDatabaseState> {
         await redisCommand(['SET', 'internup_db_state', JSON.stringify(initial)]);
         return initial;
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err && (err.digest === 'DYNAMIC_SERVER_USAGE' || err.message?.includes('Dynamic server usage'))) {
+        throw err;
+      }
       console.error('Upstash Redis read failed, falling back to local file:', err);
     }
   }

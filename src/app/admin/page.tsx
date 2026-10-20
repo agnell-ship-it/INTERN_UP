@@ -5,6 +5,8 @@ import { getCurrentUser } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { COMPANY_INFO } from '@/lib/constants';
 import { AdminPortalClient } from '@/components/AdminPortalClient';
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function AdminPage() {
   const user = await getCurrentUser();

@@ -18,6 +18,8 @@ import { getCurrentUser } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { PaymentSubmissionForm } from '@/components/PaymentSubmissionForm';
 import { DynamicUpiQrCard } from '@/components/DynamicUpiQrCard';
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export default async function PaymentPage() {
   const user = await getCurrentUser();

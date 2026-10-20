@@ -12,6 +12,7 @@
 
 # testing
 /coverage
+data/test-db*.json
 
 # next.js
 /.next/
