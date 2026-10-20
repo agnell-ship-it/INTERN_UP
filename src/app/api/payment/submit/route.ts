@@ -59,6 +59,16 @@ export async function POST(req: NextRequest) {
       screenshot_url
     );
 
+    try {
+      const { saveProgressToCookie } = await import('@/lib/progress-cookie');
+      await saveProgressToCookie({
+        studentId: user.id,
+        payment,
+      });
+    } catch {
+      // Fallback
+    }
+
     return NextResponse.json({
       success: true,
       payment,

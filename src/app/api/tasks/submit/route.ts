@@ -34,6 +34,17 @@ export async function POST(req: NextRequest) {
       notes
     );
 
+    try {
+      const { saveProgressToCookie } = await import('@/lib/progress-cookie');
+      const allSubmissions = await db.getTaskSubmissionsByEnrollmentId(enrollment_id);
+      await saveProgressToCookie({
+        studentId: user.id,
+        taskSubmissions: allSubmissions,
+      });
+    } catch {
+      // Fallback
+    }
+
     return NextResponse.json({
       success: true,
       submission,

@@ -543,19 +543,53 @@ export const db = {
   // --- Enrollments ---
   async getActiveEnrollmentByStudentId(studentId: string): Promise<Enrollment | null> {
     const state = readDb();
-    const enrollment = state.enrollments.find(
+    let enrollment = state.enrollments.find(
       (e) => e.student_id === studentId && (e.status === 'active' || e.status === 'completed')
     );
+
+    if (!enrollment) {
+      try {
+        const { getProgressFromCookie } = await import('./progress-cookie');
+        const progress = await getProgressFromCookie();
+        if (progress && progress.studentId === studentId && progress.enrollment) {
+          enrollment = progress.enrollment;
+          if (!state.enrollments.some((e) => e.id === enrollment!.id)) {
+            state.enrollments.push(enrollment);
+            writeDb(state);
+          }
+        }
+      } catch {
+        // Fallback
+      }
+    }
+
     if (!enrollment) return null;
 
     // Attach domain details
-    const domain = state.domains.find((d) => d.id === enrollment.domain_id);
+    const domain = state.domains.find((d) => d.id === enrollment!.domain_id);
     return { ...enrollment, domain };
   },
 
   async getEnrollmentById(id: string): Promise<Enrollment | null> {
     const state = readDb();
-    const enrollment = state.enrollments.find((e) => e.id === id);
+    let enrollment = state.enrollments.find((e) => e.id === id);
+
+    if (!enrollment) {
+      try {
+        const { getProgressFromCookie } = await import('./progress-cookie');
+        const progress = await getProgressFromCookie();
+        if (progress && progress.enrollment?.id === id) {
+          enrollment = progress.enrollment;
+          if (!state.enrollments.some((e) => e.id === enrollment!.id)) {
+            state.enrollments.push(enrollment);
+            writeDb(state);
+          }
+        }
+      } catch {
+        // Fallback
+      }
+    }
+
     if (!enrollment) return null;
 
     const domain = state.domains.find((d) => d.id === enrollment.domain_id);
@@ -643,12 +677,29 @@ export const db = {
   // --- Task Submissions ---
   async getTaskSubmissionsByEnrollmentId(enrollmentId: string): Promise<TaskSubmission[]> {
     const state = readDb();
-    return state.task_submissions
+    let submissions = state.task_submissions
       .filter((s) => s.enrollment_id === enrollmentId)
       .map((s) => ({
         ...s,
         task: state.tasks.find((t) => t.id === s.task_id),
       }));
+
+    if (submissions.length === 0) {
+      try {
+        const { getProgressFromCookie } = await import('./progress-cookie');
+        const progress = await getProgressFromCookie();
+        if (progress && progress.enrollment?.id === enrollmentId && progress.taskSubmissions) {
+          submissions = progress.taskSubmissions.map((s) => ({
+            ...s,
+            task: state.tasks.find((t) => t.id === s.task_id),
+          }));
+        }
+      } catch {
+        // Fallback
+      }
+    }
+
+    return submissions;
   },
 
   async submitTask(
@@ -714,7 +765,20 @@ export const db = {
   // --- LinkedIn Submissions ---
   async getLinkedInSubmissionByEnrollmentId(enrollmentId: string): Promise<LinkedInSubmission | null> {
     const state = readDb();
-    return state.linkedin_submissions.find((s) => s.enrollment_id === enrollmentId) || null;
+    const submission = state.linkedin_submissions.find((s) => s.enrollment_id === enrollmentId);
+    if (submission) return submission;
+
+    try {
+      const { getProgressFromCookie } = await import('./progress-cookie');
+      const progress = await getProgressFromCookie();
+      if (progress && progress.enrollment?.id === enrollmentId && progress.linkedInSubmission) {
+        return progress.linkedInSubmission;
+      }
+    } catch {
+      // Fallback
+    }
+
+    return null;
   },
 
   async submitLinkedIn(
@@ -810,7 +874,20 @@ export const db = {
   // --- Payments ---
   async getPaymentByEnrollmentId(enrollmentId: string): Promise<Payment | null> {
     const state = readDb();
-    return state.payments.find((p) => p.enrollment_id === enrollmentId) || null;
+    const payment = state.payments.find((p) => p.enrollment_id === enrollmentId);
+    if (payment) return payment;
+
+    try {
+      const { getProgressFromCookie } = await import('./progress-cookie');
+      const progress = await getProgressFromCookie();
+      if (progress && progress.enrollment?.id === enrollmentId && progress.payment) {
+        return progress.payment;
+      }
+    } catch {
+      // Fallback
+    }
+
+    return null;
   },
 
   async submitPayment(

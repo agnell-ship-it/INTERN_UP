@@ -22,6 +22,16 @@ export async function POST(req: NextRequest) {
 
     const enrollment = await db.createEnrollment(user.id, domain_id);
 
+    try {
+      const { saveProgressToCookie } = await import('@/lib/progress-cookie');
+      await saveProgressToCookie({
+        studentId: user.id,
+        enrollment,
+      });
+    } catch {
+      // Fallback
+    }
+
     return NextResponse.json({
       success: true,
       enrollment,
