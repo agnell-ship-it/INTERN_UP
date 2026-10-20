@@ -19,10 +19,16 @@ export function verifyPassword(password: string, salt: string, storedHash: strin
 }
 
 // Session Token helper
-export function createSessionToken(userId: string, role: string): string {
+export function createSessionToken(
+  userId: string,
+  role: string,
+  extra?: { email?: string; full_name?: string }
+): string {
   const payload = JSON.stringify({
     userId,
     role,
+    email: extra?.email,
+    full_name: extra?.full_name,
     expiresAt: Date.now() + 7 * 24 * 60 * 60 * 1000, // 7 days session
   });
   const signature = crypto
@@ -34,7 +40,12 @@ export function createSessionToken(userId: string, role: string): string {
   return `${encoded}.${signature}`;
 }
 
-export function verifySessionToken(token: string): { userId: string; role: string } | null {
+export function verifySessionToken(token: string): {
+  userId: string;
+  role: string;
+  email?: string;
+  full_name?: string;
+} | null {
   try {
     const [encoded, signature] = token.split('.');
     if (!encoded || !signature) return null;
@@ -54,7 +65,12 @@ export function verifySessionToken(token: string): { userId: string; role: strin
       return null;
     }
 
-    return { userId: data.userId, role: data.role };
+    return {
+      userId: data.userId,
+      role: data.role,
+      email: data.email,
+      full_name: data.full_name,
+    };
   } catch {
     return null;
   }
@@ -76,7 +92,24 @@ export async function getCurrentUser(): Promise<Profile | null> {
       return null;
     }
 
-    const profile = await db.getProfileById(session.userId);
+    let profile = await db.getProfileById(session.userId);
+    if (!profile && session.email) {
+      // Re-hydrate profile if running across serverless cold-start containers
+      profile = {
+        id: session.userId,
+        email: session.email,
+        full_name: session.full_name || 'Student',
+        role: (session.role as 'student' | 'admin') || 'student',
+        email_verified: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+      try {
+        await db.createProfile(profile);
+      } catch {
+        // Safe fallback
+      }
+    }
     return profile;
   } catch {
     return null;

@@ -20,8 +20,21 @@ export async function GET(req: Request) {
     });
   }
 
-  // Create session token with student role
-  const token = createSessionToken(student.id, 'student');
+  // Ensure active enrollment exists for this demo student
+  const activeEnrollment = await db.getActiveEnrollmentByStudentId(student.id);
+  if (!activeEnrollment) {
+    try {
+      await db.createEnrollment(student.id, 'dom_web-development');
+    } catch {
+      // already exists
+    }
+  }
+
+  // Create session token with student role and profile details
+  const token = createSessionToken(student.id, 'student', {
+    email: student.email,
+    full_name: student.full_name,
+  });
 
   // Redirect directly to the Student Dashboard
   const redirectUrl = new URL('/dashboard', req.url);

@@ -26,7 +26,10 @@ export async function GET(req: Request) {
     'fabaa29ce40c20817a68df52fd765c1fb39ee17e5a57379edb26171bfcdaf9a181162f9641a8f92ce4ab26a0f1444a2b0cacb9868de0ffcab64a4b388c05ae4c'
   );
 
-  const token = createSessionToken(admin.id, 'admin');
+  const token = createSessionToken(admin.id, 'admin', {
+    email: admin.email,
+    full_name: admin.full_name,
+  });
 
   // Redirect directly to the Admin Portal
   const redirectUrl = new URL('/admin', req.url);

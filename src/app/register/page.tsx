@@ -48,6 +48,26 @@ export default function RegisterPage() {
         throw new Error(data.error || 'Registration failed. Please try again.');
       }
 
+      const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+      const targetDomain = urlParams?.get('domain');
+
+      if (targetDomain) {
+        try {
+          const enrollRes = await fetch('/api/enroll', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ domain_id: targetDomain }),
+          });
+          if (enrollRes.ok) {
+            router.push('/dashboard');
+            router.refresh();
+            return;
+          }
+        } catch {
+          // Fall through to /domains
+        }
+      }
+
       router.push('/domains');
       router.refresh();
     } catch (err: unknown) {

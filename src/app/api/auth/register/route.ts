@@ -64,7 +64,10 @@ export async function POST(req: NextRequest) {
     await db.saveUserCredentials(userId, salt, hash);
 
     // Create session token
-    const token = createSessionToken(profile.id, profile.role);
+    const token = createSessionToken(profile.id, profile.role, {
+      email: profile.email,
+      full_name: profile.full_name,
+    });
 
     const response = NextResponse.json({
       success: true,

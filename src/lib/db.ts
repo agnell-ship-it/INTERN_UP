@@ -45,7 +45,11 @@ interface LocalDatabaseState {
   admin_audit_logs: AdminAuditLog[];
 }
 
-const DATA_DIR = path.join(process.cwd(), 'data');
+const IS_VERCEL = !!process.env.VERCEL;
+const DATA_DIR = IS_VERCEL
+  ? '/tmp/internup_data'
+  : path.join(process.cwd(), 'data');
+const SOURCE_DB_FILE = path.join(process.cwd(), 'data', 'local-db.json');
 const DB_FILE = process.env.VITEST
   ? path.join(DATA_DIR, 'test-db.json')
   : path.join(DATA_DIR, 'local-db.json');
@@ -129,9 +133,21 @@ function readDb(): LocalDatabaseState {
     }
 
     if (!fs.existsSync(DB_FILE)) {
-      const initial = initializeDefaultDatabase();
-      fs.writeFileSync(DB_FILE, JSON.stringify(initial, null, 2), 'utf-8');
-      return initial;
+      if (IS_VERCEL && fs.existsSync(SOURCE_DB_FILE)) {
+        try {
+          const seedContent = fs.readFileSync(SOURCE_DB_FILE, 'utf-8');
+          fs.writeFileSync(DB_FILE, seedContent, 'utf-8');
+          return JSON.parse(seedContent);
+        } catch {
+          const initial = initializeDefaultDatabase();
+          fs.writeFileSync(DB_FILE, JSON.stringify(initial, null, 2), 'utf-8');
+          return initial;
+        }
+      } else {
+        const initial = initializeDefaultDatabase();
+        fs.writeFileSync(DB_FILE, JSON.stringify(initial, null, 2), 'utf-8');
+        return initial;
+      }
     }
 
     const data = fs.readFileSync(DB_FILE, 'utf-8');
