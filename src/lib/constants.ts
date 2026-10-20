@@ -1,8 +1,8 @@
 export const COMPANY_INFO = {
   websiteName: 'INTERN-UP',
-  founderName: 'Dr. Jonath Watsan',
+  founderName: 'Dr. Jonath Watson',
   founderTitle: 'Founder, INTERN-UP',
-  supportEmail: 'jonathwatsan@gmail.com',
+  supportEmail: 'jonathwatson@gmail.com',
   initialAdminEmail: 'agnelvishwak02@gmail.com',
   programDurationDays: 7,
   programFeeINR: 100,

@@ -13,6 +13,8 @@ import {
 import { db } from '@/lib/db';
 import { COMPANY_INFO } from '@/lib/constants';
 import { formatISTDate } from '@/lib/date-utils';
+import { LinkedInShareCertificate } from '@/components/LinkedInShareCertificate';
+import { DocumentActionButtons } from '@/components/DocumentActionButtons';
 
 export default async function CertificateVerificationResultPage({
   params,
@@ -119,7 +121,32 @@ export default async function CertificateVerificationResultPage({
                 or corporate employment.
               </p>
             </div>
+
+            {/* Document Preview and Download Action */}
+            {cert.status === 'issued' && (
+              <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
+                <span className="text-xs text-slate-500 font-medium">Original Signed PDF:</span>
+                <DocumentActionButtons
+                  title={`${cert.domain_name} - Completion Certificate`}
+                  documentType="Completion Certificate"
+                  pdfUrl={`/api/documents/certificate?enrollmentId=${cert.enrollment_id || cert.certificate_id}`}
+                  verificationId={cert.certificate_id}
+                />
+              </div>
+            )}
           </div>
+
+          {/* LinkedIn Showcase & Add to Profile */}
+          {cert.status === 'issued' && (
+            <div className="px-6 sm:px-8 pb-8 pt-0">
+              <LinkedInShareCertificate
+                certificateId={cert.certificate_id}
+                domainName={cert.domain_name}
+                studentName={cert.student_name}
+                issuedAt={cert.issue_date}
+              />
+            </div>
+          )}
         </div>
       ) : (
         <div className="p-8 bg-white rounded-2xl border border-slate-200 text-center space-y-4">

@@ -85,6 +85,11 @@ export default function FaqPage() {
       category: 'Payment & Direct UPI Fee',
       items: [
         {
+          question: 'When do I pay the ₹100 fee?',
+          answer:
+            'At INTERN-UP, you build and learn first. The ₹100 certificate verification fee is strictly locked and only payable once you have submitted all 5 domain tasks and had your LinkedIn announcement approved by the administrator.',
+        },
+        {
           question: 'What is the program fee and how is it paid?',
           answer:
             'The one-time program administration fee is ₹100 per student. Payment is made via direct UPI (Google Pay, PhonePe, Paytm, BHIM, or any UPI app) using our official UPI ID or scanned QR code.',

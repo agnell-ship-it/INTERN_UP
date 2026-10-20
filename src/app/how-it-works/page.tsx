@@ -77,8 +77,8 @@ export default function HowItWorksPage() {
     },
     {
       num: 9,
-      title: 'Pay the ₹100 Program Fee',
-      desc: 'Make a direct UPI transfer of ₹100 using any UPI app (GPay, PhonePe, Paytm) to the official UPI ID / QR code.',
+      title: 'Pay ₹100 Certificate Fee (When Complete)',
+      desc: 'Only after completing all 5 tasks and obtaining LinkedIn approval, you unlock the payment step and pay the ₹100 certificate fee via direct UPI.',
       icon: <IndianRupee className="w-5 h-5 text-emerald-600" />,
       color: 'bg-emerald-50 border-emerald-200',
     },

@@ -33,10 +33,12 @@ import {
   Save,
   Download,
   Clock,
+  Eye,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
 import { formatISTDate } from '@/lib/date-utils';
+import { PdfPreviewModal } from './PdfPreviewModal';
 
 interface AdminPortalClientProps {
   stats: {
@@ -114,6 +116,7 @@ export const AdminPortalClient: React.FC<AdminPortalClientProps> = ({
   // Revoke Certificate Modal
   const [revokeCertModal, setRevokeCertModal] = useState<Certificate | null>(null);
   const [revocationReason, setRevocationReason] = useState('');
+  const [previewCert, setPreviewCert] = useState<Certificate | null>(null);
 
   // Domain Editing / Adding
   const [editDomainModal, setEditDomainModal] = useState<Partial<Domain> | null>(null);
@@ -853,6 +856,15 @@ export const AdminPortalClient: React.FC<AdminPortalClientProps> = ({
                   </div>
 
                   <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPreviewCert(c)}
+                      className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 font-semibold text-slate-700 flex items-center gap-1 text-[11px] cursor-pointer"
+                    >
+                      <Eye className="w-3 h-3 text-blue-600" />
+                      <span>Preview PDF</span>
+                    </button>
+
                     <a
                       href={`/verify/${c.certificate_id}`}
                       target="_blank"
@@ -1293,6 +1305,18 @@ export const AdminPortalClient: React.FC<AdminPortalClientProps> = ({
           </div>
         </Modal>
       )}
+
+      {/* PDF Preview Modal for Admin */}
+      <PdfPreviewModal
+        isOpen={!!previewCert}
+        onClose={() => setPreviewCert(null)}
+        title={`${previewCert?.domain_name || 'Certificate'} - ${previewCert?.student_name}`}
+        pdfUrl={`/api/documents/certificate?enrollmentId=${
+          previewCert?.enrollment_id || previewCert?.certificate_id || ''
+        }`}
+        documentType="Completion Certificate"
+        verificationId={previewCert?.certificate_id}
+      />
     </div>
   );
 };

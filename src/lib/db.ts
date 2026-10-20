@@ -46,7 +46,9 @@ interface LocalDatabaseState {
 }
 
 const DATA_DIR = path.join(process.cwd(), 'data');
-const DB_FILE = path.join(DATA_DIR, 'local-db.json');
+const DB_FILE = process.env.VITEST
+  ? path.join(DATA_DIR, 'test-db.json')
+  : path.join(DATA_DIR, 'local-db.json');
 
 function initializeDefaultDatabase(): LocalDatabaseState {
   const now = getCurrentTimestamp();
@@ -147,6 +149,46 @@ function readDb(): LocalDatabaseState {
     if (!parsed.site_settings) {
       parsed.site_settings = initializeDefaultDatabase().site_settings;
       modified = true;
+    }
+
+    // Ensure designated administrator profile and credentials for agnelvishwak02@gmail.com (Password: Agnel@2007)
+    if (!process.env.VITEST) {
+      const adminEmail = COMPANY_INFO.initialAdminEmail.toLowerCase().trim();
+      let adminProfile = parsed.profiles.find((p) => p.email.toLowerCase() === adminEmail);
+      if (!adminProfile) {
+        adminProfile = {
+          id: 'usr_owner_target_1',
+          email: adminEmail,
+          full_name: 'Agnel Vishwak',
+          role: 'admin',
+          email_verified: true,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+        parsed.profiles.unshift(adminProfile);
+        modified = true;
+      } else if (adminProfile.role !== 'admin') {
+        adminProfile.role = 'admin';
+        modified = true;
+      }
+
+      parsed.auth_credentials = parsed.auth_credentials || [];
+      const adminCredIdx = parsed.auth_credentials.findIndex((c) => c.user_id === adminProfile!.id);
+      const targetHash = 'fabaa29ce40c20817a68df52fd765c1fb39ee17e5a57379edb26171bfcdaf9a181162f9641a8f92ce4ab26a0f1444a2b0cacb9868de0ffcab64a4b388c05ae4c';
+      const targetSalt = 'a1b2c3d4e5f60718293a4b5c6d7e8f90';
+
+      if (adminCredIdx === -1) {
+        parsed.auth_credentials.push({
+          user_id: adminProfile.id,
+          salt: targetSalt,
+          hash: targetHash,
+        });
+        modified = true;
+      } else if (parsed.auth_credentials[adminCredIdx].hash !== targetHash) {
+        parsed.auth_credentials[adminCredIdx].salt = targetSalt;
+        parsed.auth_credentials[adminCredIdx].hash = targetHash;
+        modified = true;
+      }
     }
 
     if (modified) {

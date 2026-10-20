@@ -14,6 +14,7 @@ import {
   ArrowRight,
   User,
   ListTodo,
+  Lock,
 } from 'lucide-react';
 import { getCurrentUser } from '@/lib/auth';
 import { db } from '@/lib/db';
@@ -22,6 +23,9 @@ import { formatISTDate, getEnrollmentTimeStatus } from '@/lib/date-utils';
 import { TaskSubmissionItem } from '@/components/TaskSubmissionItem';
 import { LinkedInSubmissionSection } from '@/components/LinkedInSubmissionSection';
 import { DashboardProfileSection } from '@/components/DashboardProfileSection';
+import { DashboardStatusBanner } from '@/components/DashboardStatusBanner';
+import { DocumentActionButtons } from '@/components/DocumentActionButtons';
+import { LinkedInShareCertificate } from '@/components/LinkedInShareCertificate';
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -58,6 +62,10 @@ export default async function DashboardPage() {
   const completedCount = taskSubmissions.filter((t) => t.github_url?.trim().length > 0).length;
   const progressPercent = Math.min(100, Math.round((completedCount / 5) * 100));
 
+  const isTasksComplete = completedCount >= 5;
+  const isLinkedInApproved = linkedInSubmission?.status === 'approved';
+  const isReadyForPayment = isTasksComplete && isLinkedInApproved;
+
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
       {/* Student Welcome & Profile Header */}
@@ -88,7 +96,17 @@ export default async function DashboardPage() {
           </div>
         </div>
       ) : (
-        <div className="space-y-8">
+        <div className="space-y-6">
+          {/* Dynamic Live Status Alert Banner */}
+          <DashboardStatusBanner
+            enrollment={enrollment}
+            linkedInSubmission={linkedInSubmission}
+            payment={payment}
+            certificate={certificate}
+            completedTasksCount={completedCount}
+            isEligibleForCertificate={eligibility.isEligible}
+          />
+
           {/* Active Enrollment Horizon Card */}
           <div className="p-6 sm:p-8 bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-3xl shadow-md space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-700/80 pb-5">
@@ -111,16 +129,13 @@ export default async function DashboardPage() {
                 </p>
               </div>
 
-              {/* Offer Letter Download Button */}
+              {/* Offer Letter Action Buttons with Preview Modal */}
               <div className="shrink-0">
-                <a
-                  href={`/api/documents/offer-letter?enrollmentId=${enrollment.id}`}
-                  download
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-sm transition-all"
-                >
-                  <FileDown className="w-4 h-4" />
-                  <span>Download Offer Letter (PDF)</span>
-                </a>
+                <DocumentActionButtons
+                  title={`${enrollment.domain?.name || 'Internship'} - Offer Letter`}
+                  documentType="Offer Letter"
+                  pdfUrl={`/api/documents/offer-letter?enrollmentId=${enrollment.id}`}
+                />
               </div>
             </div>
 
@@ -177,51 +192,119 @@ export default async function DashboardPage() {
           {/* Quick Action Cards (Payment & Certificate status overview) */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Direct UPI Payment Overview Card */}
-            <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-2xs space-y-4 flex flex-col justify-between">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 rounded-lg bg-emerald-50 text-emerald-700">
-                      <IndianRupee className="w-4 h-4" />
+            {isReadyForPayment ? (
+              /* UNLOCKED & READY FOR CERTIFICATE */
+              <div className="p-6 bg-white rounded-2xl border-2 border-emerald-500/40 bg-emerald-50/10 shadow-xs space-y-4 flex flex-col justify-between">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 rounded-lg bg-emerald-100 text-emerald-800">
+                        <IndianRupee className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-sm text-slate-900">Certificate Processing Fee</h3>
+                        <span className="text-[10px] text-emerald-700 font-semibold uppercase tracking-wider block">
+                          Milestones Met • Ready for Certificate
+                        </span>
+                      </div>
                     </div>
-                    <h3 className="font-bold text-sm text-slate-900">Direct UPI Program Fee</h3>
+
+                    {payment?.status === 'approved' ? (
+                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                        Approved
+                      </span>
+                    ) : payment?.status === 'pending_verification' ? (
+                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-100 text-amber-800 border border-amber-300">
+                        Pending Verification
+                      </span>
+                    ) : payment?.status === 'rejected' ? (
+                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-red-100 text-red-800 border border-red-300">
+                        Rejected
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-600 text-white animate-pulse">
+                        Unlocked
+                      </span>
+                    )}
                   </div>
 
-                  {payment?.status === 'approved' ? (
-                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      Approved
-                    </span>
-                  ) : payment?.status === 'pending_verification' ? (
-                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-                      Pending Verification
-                    </span>
-                  ) : payment?.status === 'rejected' ? (
-                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200">
-                      Rejected
-                    </span>
-                  ) : (
-                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-100 text-slate-600">
-                      Not Started
-                    </span>
-                  )}
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    {payment?.status === 'approved'
+                      ? 'Your ₹100 direct UPI payment has been verified by the administrator. Your completion certificate is unlocked!'
+                      : payment?.status === 'pending_verification'
+                      ? `Your ₹100 payment submission (UTR: ${payment.upi_reference}) is currently undergoing manual administrator verification.`
+                      : 'You have completed all 5 tasks and your LinkedIn announcement is approved! Fulfill the ₹100 direct UPI payment to claim your verified certificate.'}
+                  </p>
                 </div>
 
-                <p className="text-xs text-slate-500 leading-relaxed">
-                  A one-time ₹100 direct UPI payment verified manually by the administrator against bank records.
-                </p>
+                <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-xs text-slate-500 font-medium">Certificate Fee:</span>
+                    <span className="text-sm font-extrabold text-emerald-700">₹100</span>
+                  </div>
+                  <Link
+                    href="/payment"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-xs transition-colors"
+                  >
+                    <span>{payment ? 'View / Update Payment' : 'Pay ₹100 & Claim Certificate'}</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
               </div>
+            ) : (
+              /* LOCKED STATE: User has not completed all 5 tasks and/or LinkedIn not approved */
+              <div className="p-6 bg-slate-50/70 rounded-2xl border border-slate-200 space-y-4 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="p-2 rounded-lg bg-slate-200 text-slate-600">
+                        <Lock className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-sm text-slate-700">Certificate Fee (Locked)</h3>
+                        <span className="text-[10px] text-slate-500 font-medium block">
+                          Milestones In Progress
+                        </span>
+                      </div>
+                    </div>
 
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-700">Fee: ₹100</span>
-                <Link
-                  href="/payment"
-                  className="text-xs font-semibold text-blue-600 hover:text-blue-700 flex items-center gap-1"
-                >
-                  <span>{payment ? 'View / Update Payment' : 'Pay & Submit UTR'}</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
+                    <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-slate-200 text-slate-600">
+                      Locked
+                    </span>
+                  </div>
+
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    At INTERN-UP, you build first! The <strong>₹100 certificate fee</strong> will only appear once you have completed all 5 tasks and your LinkedIn announcement is approved.
+                  </p>
+
+                  <div className="p-3 bg-white rounded-xl border border-slate-200/80 text-[11px] space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-600">Milestone Tasks (5 Required):</span>
+                      <span className={completedCount === 5 ? 'font-bold text-emerald-600' : 'font-semibold text-slate-700'}>
+                        {completedCount} / 5 Submitted
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-600">LinkedIn Announcement:</span>
+                      <span className={isLinkedInApproved ? 'font-bold text-emerald-600' : 'font-semibold text-slate-700'}>
+                        {isLinkedInApproved ? 'Approved' : linkedInSubmission ? 'Pending Review' : 'Not Submitted'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-3 border-t border-slate-200 flex items-center justify-between">
+                  <span className="text-xs text-slate-400 font-medium">Payment unlocks when ready for certificate</span>
+                  <button
+                    disabled
+                    className="px-3.5 py-1.5 rounded-lg bg-slate-200/80 text-slate-400 font-semibold text-xs cursor-not-allowed flex items-center gap-1.5"
+                  >
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>Payment Locked</span>
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Certificate Status Card */}
             <div className="p-6 bg-white rounded-2xl border border-slate-200 shadow-2xs space-y-4 flex flex-col justify-between">
@@ -247,20 +330,24 @@ export default async function DashboardPage() {
 
                 {eligibility.isEligible ? (
                   <p className="text-xs text-emerald-700 leading-relaxed font-medium">
-                    Congratulations! All 5 tasks, LinkedIn announcement, and payment have been verified.
+                    Congratulations! All 5 tasks, LinkedIn announcement, and ₹100 payment have been verified.
+                  </p>
+                ) : isReadyForPayment ? (
+                  <p className="text-xs text-amber-700 leading-relaxed font-medium">
+                    All tasks and LinkedIn post are approved! Fulfill the ₹100 program fee to unlock and download your completion certificate.
                   </p>
                 ) : (
                   <div className="text-[11px] text-slate-500 space-y-1">
-                    <span className="font-medium text-slate-700">Checklist to unlock:</span>
+                    <span className="font-medium text-slate-700">Checklist to unlock certificate:</span>
                     <ul className="list-disc pl-4 space-y-0.5 text-slate-500">
-                      <li className={completedCount === 5 ? 'text-emerald-600' : ''}>
+                      <li className={completedCount === 5 ? 'text-emerald-600 font-medium' : ''}>
                         5/5 Tasks submitted ({completedCount}/5 done)
                       </li>
-                      <li className={linkedInSubmission?.status === 'approved' ? 'text-emerald-600' : ''}>
+                      <li className={isLinkedInApproved ? 'text-emerald-600 font-medium' : ''}>
                         LinkedIn announcement approved
                       </li>
-                      <li className={payment?.status === 'approved' ? 'text-emerald-600' : ''}>
-                        ₹100 direct UPI payment approved
+                      <li className={payment?.status === 'approved' ? 'text-emerald-600 font-medium' : 'text-slate-400'}>
+                        ₹100 direct UPI fee (unlocks once above 2 are done)
                       </li>
                     </ul>
                   </div>
@@ -269,25 +356,43 @@ export default async function DashboardPage() {
 
               <div className="pt-3 border-t border-slate-100">
                 {eligibility.isEligible ? (
-                  <a
-                    href={`/api/documents/certificate?enrollmentId=${enrollment.id}`}
-                    download
-                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-xs transition-colors"
+                  <DocumentActionButtons
+                    title={`${enrollment.domain?.name || 'Internship'} - Completion Certificate`}
+                    documentType="Completion Certificate"
+                    pdfUrl={`/api/documents/certificate?enrollmentId=${enrollment.id}`}
+                    verificationId={certificate?.certificate_id}
+                    className="w-full justify-center"
+                  />
+                ) : isReadyForPayment ? (
+                  <Link
+                    href="/payment"
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs shadow-xs transition-colors"
                   >
-                    <Award className="w-4 h-4" />
-                    <span>Download Completion Certificate (PDF)</span>
-                  </a>
+                    <span>Proceed to Pay ₹100 &amp; Claim Certificate</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
                 ) : (
                   <button
                     disabled
-                    className="w-full px-4 py-2 rounded-lg bg-slate-100 text-slate-400 font-semibold text-xs cursor-not-allowed"
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-100 text-slate-400 font-semibold text-xs cursor-not-allowed flex items-center justify-center gap-1.5"
                   >
-                    Certificate Locked (Fulfill Checklist)
+                    <Lock className="w-3.5 h-3.5" />
+                    <span>Certificate Locked (Complete Milestones First)</span>
                   </button>
                 )}
               </div>
             </div>
           </div>
+
+          {/* Certificate Viral LinkedIn Showcase Section */}
+          {eligibility.isEligible && (
+            <LinkedInShareCertificate
+              certificateId={certificate?.certificate_id || enrollment.id}
+              domainName={enrollment.domain?.name || 'Computer Science'}
+              studentName={user.full_name}
+              issuedAt={certificate?.issue_date}
+            />
+          )}
 
           {/* LinkedIn Announcement Section */}
           <LinkedInSubmissionSection

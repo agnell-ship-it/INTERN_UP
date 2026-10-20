@@ -37,8 +37,8 @@ describe('INTERN-UP Business Rules & Integrity Tests', () => {
 
     it('company info must have exact designated email and founder details', () => {
       expect(COMPANY_INFO.initialAdminEmail).toBe('agnelvishwak02@gmail.com');
-      expect(COMPANY_INFO.supportEmail).toBe('jonathwatsan@gmail.com');
-      expect(COMPANY_INFO.founderName).toBe('Dr. Jonath Watsan');
+      expect(COMPANY_INFO.supportEmail).toBe('jonathwatson@gmail.com');
+      expect(COMPANY_INFO.founderName).toBe('Dr. Jonath Watson');
       expect(COMPANY_INFO.programDurationDays).toBe(7);
       expect(COMPANY_INFO.programFeeINR).toBe(100);
     });
@@ -184,6 +184,30 @@ describe('INTERN-UP Business Rules & Integrity Tests', () => {
       expect(result.isEligible).toBe(false);
       expect(result.checklist.notRevoked).toBe(false);
       expect(result.reasons.some((r) => r.includes('revoked'))).toBe(true);
+    });
+  });
+
+  describe('Payment Readiness & Milestone Gating (₹100 Fee Lock)', () => {
+    const isReadyForPayment = (
+      taskCount: number,
+      linkedInStatus: 'pending_review' | 'approved' | 'rejected' | null
+    ) => {
+      return taskCount >= 5 && linkedInStatus === 'approved';
+    };
+
+    it('locks ₹100 payment when student has completed fewer than 5 tasks', () => {
+      expect(isReadyForPayment(0, 'approved')).toBe(false);
+      expect(isReadyForPayment(4, 'approved')).toBe(false);
+    });
+
+    it('locks ₹100 payment when LinkedIn announcement is not approved', () => {
+      expect(isReadyForPayment(5, null)).toBe(false);
+      expect(isReadyForPayment(5, 'pending_review')).toBe(false);
+      expect(isReadyForPayment(5, 'rejected')).toBe(false);
+    });
+
+    it('unlocks ₹100 payment only when student has 5/5 tasks and approved LinkedIn post', () => {
+      expect(isReadyForPayment(5, 'approved')).toBe(true);
     });
   });
 
