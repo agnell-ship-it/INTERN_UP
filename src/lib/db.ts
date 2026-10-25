@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import {
   AdminAuditLog,
   Certificate,
@@ -29,10 +30,18 @@ interface PasswordResetToken {
   expires_at: number;
 }
 
+interface EmailVerificationToken {
+  email: string;
+  token: string;
+  code: string;
+  expires_at: number;
+}
+
 interface LocalDatabaseState {
   profiles: Profile[];
   auth_credentials: AuthCredential[];
   password_reset_tokens: PasswordResetToken[];
+  email_verification_tokens?: EmailVerificationToken[];
   domains: Domain[];
   tasks: Task[];
   enrollments: Enrollment[];
@@ -112,6 +121,7 @@ function initializeDefaultDatabase(): LocalDatabaseState {
     profiles: [],
     auth_credentials: [],
     password_reset_tokens: [],
+    email_verification_tokens: [],
     domains,
     tasks,
     enrollments: [],
@@ -440,6 +450,41 @@ export const db = {
     await writeDbAsync(state);
 
     return { success: true, message: 'Password has been successfully updated.' };
+  },
+
+  // --- Email Verification ---
+  async saveEmailVerificationToken(email: string, token: string, code: string, expiresInMinutes = 1440): Promise<void> {
+    const state = await readDbAsync();
+    state.email_verification_tokens = state.email_verification_tokens || [];
+    state.email_verification_tokens = state.email_verification_tokens.filter((t) => t.email !== email.toLowerCase().trim());
+    state.email_verification_tokens.push({
+      email: email.toLowerCase().trim(),
+      token,
+      code,
+      expires_at: Date.now() + expiresInMinutes * 60 * 1000,
+    });
+    await writeDbAsync(state);
+  },
+
+  async verifyEmailByTokenOrCode(input: string): Promise<{ success: boolean; message: string; email?: string }> {
+    const state = await readDbAsync();
+    state.email_verification_tokens = state.email_verification_tokens || [];
+    const clean = input.trim();
+    const found = state.email_verification_tokens.find((t) => t.token === clean || t.code === clean);
+    if (!found) {
+      return { success: false, message: 'Invalid or expired verification code.' };
+    }
+    if (Date.now() > found.expires_at) {
+      return { success: false, message: 'Verification link/code has expired. Please request a new one.' };
+    }
+    const profile = state.profiles.find((p) => p.email.toLowerCase() === found.email.toLowerCase());
+    if (profile) {
+      profile.email_verified = true;
+      profile.updated_at = getCurrentTimestamp();
+    }
+    state.email_verification_tokens = state.email_verification_tokens.filter((t) => t.email !== found.email);
+    await writeDbAsync(state);
+    return { success: true, message: 'Email address verified successfully!', email: found.email };
   },
 
   // --- Initial Admin Bootstrap ---
@@ -830,6 +875,7 @@ export const db = {
         ...state.task_submissions[existingIdx],
         github_url: githubUrl.trim(),
         notes: notes?.trim() || '',
+        review_status: 'pending_review',
         updated_at: now,
       };
       submission = state.task_submissions[existingIdx];
@@ -841,6 +887,7 @@ export const db = {
         student_id: studentId,
         github_url: githubUrl.trim(),
         notes: notes?.trim() || '',
+        review_status: 'pending_review',
         submitted_at: now,
         updated_at: now,
       };
@@ -859,6 +906,54 @@ export const db = {
 
     await writeDbAsync(state);
     return submission;
+  },
+
+  async reviewTaskSubmission(
+    submissionId: string,
+    reviewerFeedback: string,
+    reviewStatus: 'approved' | 'changes_requested',
+    adminId: string
+  ): Promise<TaskSubmission | null> {
+    const state = await readDbAsync();
+    const idx = state.task_submissions.findIndex((s) => s.id === submissionId);
+    if (idx === -1) return null;
+
+    const now = getCurrentTimestamp();
+    state.task_submissions[idx] = {
+      ...state.task_submissions[idx],
+      review_status: reviewStatus,
+      reviewer_feedback: reviewerFeedback.trim(),
+      reviewed_at: now,
+      reviewed_by: adminId,
+      updated_at: now,
+    };
+
+    state.admin_audit_logs.push({
+      id: `log_${Date.now()}`,
+      actor_id: adminId,
+      action: 'TASK_SUBMISSION_REVIEWED',
+      target_table: 'task_submissions',
+      target_id: submissionId,
+      details: { review_status: reviewStatus, reviewer_feedback: reviewerFeedback },
+      created_at: now,
+    });
+
+    await writeDbAsync(state);
+    return state.task_submissions[idx];
+  },
+
+  async getAllTaskSubmissions(): Promise<(TaskSubmission & { task?: Task; student?: Profile; domain?: Domain })[]> {
+    const state = await readDbAsync();
+    return state.task_submissions
+      .filter((s) => s.github_url && s.github_url.trim().length > 0)
+      .map((s) => {
+        const task = state.tasks.find((t) => t.id === s.task_id);
+        const enrollment = state.enrollments.find((e) => e.id === s.enrollment_id);
+        const student = state.profiles.find((p) => p.id === s.student_id);
+        const domain = enrollment ? state.domains.find((d) => d.id === enrollment.domain_id) : undefined;
+        return { ...s, task, student, domain };
+      })
+      .sort((a, b) => new Date(b.submitted_at).getTime() - new Date(a.submitted_at).getTime());
   },
 
   // --- LinkedIn Submissions ---
@@ -1167,7 +1262,9 @@ export const db = {
     }
 
     const now = getCurrentTimestamp();
-    const certCode = `INUP-${new Date().getFullYear()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    // Cryptographically secure, unguessable certificate identifier with high entropy
+    const entropy = crypto.randomBytes(6).toString('hex').toUpperCase();
+    const certCode = `INUP-${new Date().getFullYear()}-${entropy.slice(0, 4)}-${entropy.slice(4, 8)}-${entropy.slice(8, 12)}`;
 
     const cert: Certificate = {
       id: `cert_${Date.now()}`,
@@ -1305,6 +1402,7 @@ export const db = {
     const completedEnrollments = state.enrollments.filter((e) => e.status === 'completed').length;
     const pendingLinkedIn = state.linkedin_submissions.filter((s) => s.status === 'pending_review').length;
     const pendingPayments = state.payments.filter((p) => p.status === 'pending_verification').length;
+    const pendingTaskReviews = state.task_submissions.filter((s) => s.review_status === 'pending_review' && s.github_url?.trim().length > 0).length;
     const issuedCertificates = state.certificates.filter((c) => c.status === 'issued').length;
 
     return {
@@ -1313,10 +1411,54 @@ export const db = {
       completedEnrollments,
       pendingLinkedIn,
       pendingPayments,
+      pendingTaskReviews,
       issuedCertificates,
       totalDomains: state.domains.length,
       totalTasks: state.tasks.length,
     };
+  },
+
+  // --- Public Certificate Registry ---
+  async searchCertificatesRegistry(options: {
+    query?: string;
+    domain?: string;
+    limit?: number;
+  }): Promise<Array<{
+    certificate_id: string;
+    student_name: string;
+    domain_name: string;
+    start_date: string;
+    end_date: string;
+    issue_date: string;
+    status: 'issued' | 'revoked';
+  }>> {
+    const state = await readDbAsync();
+    let certs = state.certificates;
+
+    if (options.domain && options.domain !== 'all') {
+      const dClean = options.domain.toLowerCase().trim();
+      certs = certs.filter((c) => c.domain_name.toLowerCase().includes(dClean));
+    }
+
+    if (options.query && options.query.trim().length > 0) {
+      const q = options.query.toLowerCase().trim();
+      certs = certs.filter(
+        (c) =>
+          c.certificate_id.toLowerCase().includes(q) ||
+          c.student_name.toLowerCase().includes(q) ||
+          c.domain_name.toLowerCase().includes(q)
+      );
+    }
+
+    return certs.slice(0, options.limit || 50).map((c) => ({
+      certificate_id: c.certificate_id,
+      student_name: c.student_name,
+      domain_name: c.domain_name,
+      start_date: c.start_date,
+      end_date: c.end_date,
+      issue_date: c.issue_date,
+      status: c.status,
+    }));
   },
 
   _resetDatabaseForTesting(): void {

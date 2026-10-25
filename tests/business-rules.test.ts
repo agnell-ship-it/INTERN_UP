@@ -37,7 +37,7 @@ describe('INTERN-UP Business Rules & Integrity Tests', () => {
 
     it('company info must have exact designated email and founder details', () => {
       expect(COMPANY_INFO.initialAdminEmail).toBe('agnelvishwak02@gmail.com');
-      expect(COMPANY_INFO.supportEmail).toBe('jonathwatson@gmail.com');
+      expect(COMPANY_INFO.supportEmail).toBe('support@internup.dev');
       expect(COMPANY_INFO.founderName).toBe('Dr. Jonath Watson');
       expect(COMPANY_INFO.programDurationDays).toBe(7);
       expect(COMPANY_INFO.programFeeINR).toBe(100);

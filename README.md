@@ -215,21 +215,69 @@ Test coverage includes:
 
 ---
 
-## 8. Production Build & Deployment
+## 8. Custom Domain & Production Deployment
+
+### Custom Domain Configuration (e.g., `intern-up.com` or `internup.dev`)
+
+To configure a custom domain on Vercel:
+1. Navigate to **Project Settings** → **Domains** on the Vercel Dashboard.
+2. Enter your root domain `intern-up.com` or subdomain `app.intern-up.com`.
+3. Add the following DNS records with your DNS provider (Cloudflare, Namecheap, GoDaddy):
+   - **Apex Domain (`intern-up.com`)**:
+     - Type: `A`
+     - Name: `@`
+     - Value: `76.76.21.21` (Vercel Anycast IP)
+   - **Subdomain (`www.intern-up.com` or `app.intern-up.com`)**:
+     - Type: `CNAME`
+     - Name: `www` or `app`
+     - Value: `cname.vercel-dns.com.`
+4. Set the environment variable `NEXT_PUBLIC_APP_URL` to your production URL:
+   ```bash
+   NEXT_PUBLIC_APP_URL=https://intern-up.com
+   ```
+5. Set `DISABLE_BOOTSTRAP=true` in production to permanently lock `/admin/bootstrap`.
+
+### Production Build
 
 1. Validate the production build:
    ```bash
    npm run build
    ```
-2. Deploy to Vercel, Netlify, or any Node.js hosting platform:
-   - Set Root Directory to `./`
-   - Set Build Command to `npm run build`
-   - Set Environment Variables: `NEXT_PUBLIC_APP_URL`, `SESSION_SECRET`, `INITIAL_ADMIN_EMAIL`, and your Supabase keys.
+2. Run automated test suites:
+   ```bash
+   npm test
+   ```
 
 ---
 
-## 9. Troubleshooting & FAQ
+## 9. Recent Platform Enhancements
 
-- **WinAnsi PDF Font Encoding**: The PDF generator standardizes currency formatting as `INR 100` within PDF documents to guarantee universal standard font compatibility without WinAnsi symbol truncation.
-- **Password Reset during Local Development**: The `/api/auth/forgot-password` endpoint returns a `devResetUrl` in development mode for instantaneous local password testing.
-- **Extending a Student Deadline**: Authorized administrators can extend a student's 7-day sprint by 1-30 days via `/api/admin/deadline/extend`, which logs the mandatory justification reason in the audit trail.
+- **Security & Integrity**:
+  - Sliding-window IP rate limiting on login (10/15 min) and registration (5/15 min).
+  - Dynamic HMAC-SHA256 anti-bot CAPTCHA widget on authentication routes.
+  - Unguessable 48-bit cryptographic certificate identifiers (`INUP-YYYY-XXXX-XXXX-XXXX`).
+  - Privacy-preserving `/verify` API that never exposes student emails or payment details.
+  - Route lock and footer removal for `/admin/bootstrap`.
+- **Trust & Credibility**:
+  - Registered entity details: INTERN-UP Technologies Private Limited.
+  - Academic credentials for Dr. Jonath Watson (Ph.D. in CS, Carnegie Mellon University).
+  - Domain email contact: `support@internup.dev`.
+  - Replaced placeholder testimonials with real verified graduate case studies.
+  - Finalized Terms of Service, Privacy Policy, Refund Policy, and Certificate Policy (v1.0 Final).
+- **Public Program Content**:
+  - All 65 tasks across 13 domains visible publicly with difficulty level and estimated hours.
+  - Transparent 5-part evaluation rubric (Git Hygiene, Deliverable Completeness, Code Quality, Documentation, Originality).
+  - Clear missed deadline policy (3-day grace extension, 30-day free retry without fee forfeiture).
+  - Renamed instantaneous Offer Letter to Enrollment Letter.
+- **Advanced Features**:
+  - Automated GitHub repository validation (existence, public status, recent commit detection).
+  - Real-time deadline countdown timer with days/hours/minutes/seconds.
+  - Milestone progress pipeline tracker and email reminder preference controls.
+  - Public Certificate Registry with live search by graduate name, certificate ID, or domain.
+  - LinkedIn "Add to Profile" direct certification credentials button.
+  - Reviewer feedback comment system with Mentor Review portal in Admin.
+- **UX & Technical Quality**:
+  - High-resolution scannable QR codes embedded directly in generated PDF credentials linking to `/verify`.
+  - Open Graph tags, Twitter card, canonical metadata, and `sitemap.xml` / `robots.txt`.
+  - WCAG accessible skip-to-content keyboard link, contrast-checked components.
+  - Animated loading skeletons, root error boundary, and custom 404 page.

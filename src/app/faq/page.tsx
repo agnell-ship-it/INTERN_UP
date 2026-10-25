@@ -102,12 +102,22 @@ export default function FaqPage() {
       ],
     },
     {
-      category: 'Offer Letters & Certificates',
+      category: 'Enrollment Letters & Certificates',
       items: [
         {
-          question: 'When do I get my Offer Letter?',
+          question: 'When do I get my Enrollment Letter?',
           answer:
-            'Your personalized, tamper-resistant PDF offer letter is generated and available for immediate download the moment you select your domain.',
+            'Your personalized, server-signed PDF enrollment letter is generated and available for immediate download the moment you select your domain.',
+        },
+        {
+          question: 'What happens if I miss the 7-day deadline: extension, retry, or fail?',
+          answer:
+            'We provide flexible student support: (1) 3-Day Extension: You can activate a one-time 3-calendar-day extension directly from your dashboard before deadline cutoff. (2) Free Retry: If your sprint expires before completing all 5 tasks, you can re-enroll in a fresh sprint cohort within 30 days at zero extra charge. (3) Work Preservation: Your previously submitted GitHub repositories remain saved. Enrollments are only marked failed after 30 days of inactivity or plagiarism.',
+        },
+        {
+          question: 'How are my submitted task repositories reviewed?',
+          answer:
+            'Platform reviewers evaluate each task against our 5-point rubric: Repository Structure & Git Hygiene (20%), Deliverable Completeness (25%), Code Quality & Modularity (20%), README Documentation (20%), and Academic Integrity (15%). Reviewer feedback is visible directly on each task card.',
         },
         {
           question: 'What are the strict conditions for receiving the Completion Certificate?',
@@ -117,7 +127,7 @@ export default function FaqPage() {
         {
           question: 'Can an employer verify my certificate?',
           answer:
-            'Yes! Every certificate contains a unique public Certificate ID (e.g., INUP-2026-XXXX-XXXX) that can be verified by anyone on our public registry at /verify without exposing sensitive personal information.',
+            'Yes! Every certificate contains a unique cryptographically unguessable ID (e.g., INUP-2026-XXXX-XXXX) that can be verified by anyone on our public registry at /verify without exposing sensitive personal information.',
         },
       ],
     },

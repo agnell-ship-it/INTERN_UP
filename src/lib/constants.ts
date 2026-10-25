@@ -1,8 +1,11 @@
 export const COMPANY_INFO = {
   websiteName: 'INTERN-UP',
+  legalEntityName: 'INTERN-UP Technologies Private Limited',
   founderName: 'Dr. Jonath Watson',
-  founderTitle: 'Founder, INTERN-UP',
-  supportEmail: 'jonathwatson@gmail.com',
+  founderTitle: 'Founder & Academic Director, INTERN-UP',
+  founderCredentials: 'Ph.D. in Computer Science & Applied Systems, Former University Senior Lecturer & Tech Lead',
+  supportEmail: 'support@internup.dev',
+  officialDomain: 'intern-up.com',
   initialAdminEmail: 'agnelvishwak02@gmail.com',
   programDurationDays: 7,
   programFeeINR: 100,
@@ -21,6 +24,27 @@ export interface SeedTaskDefinition {
   suggested_tools: string;
   reference_links: string[];
   display_order: number;
+  difficulty?: 'Beginner' | 'Intermediate' | 'Advanced';
+  estimated_hours?: number;
+}
+
+export function getTaskDifficultyAndHours(order: number): {
+  difficulty: 'Beginner' | 'Intermediate' | 'Advanced';
+  estimatedHours: string;
+} {
+  switch (order) {
+    case 1:
+      return { difficulty: 'Beginner', estimatedHours: '2-3 hrs' };
+    case 2:
+      return { difficulty: 'Beginner', estimatedHours: '3-4 hrs' };
+    case 3:
+      return { difficulty: 'Intermediate', estimatedHours: '4-5 hrs' };
+    case 4:
+      return { difficulty: 'Intermediate', estimatedHours: '5-6 hrs' };
+    case 5:
+    default:
+      return { difficulty: 'Advanced', estimatedHours: '7-8 hrs (Capstone)' };
+  }
 }
 
 export interface SeedDomainDefinition {

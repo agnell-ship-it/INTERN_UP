@@ -3,13 +3,16 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { GraduationCap, Lock, Mail, ArrowRight, AlertCircle } from 'lucide-react';
+import { GraduationCap, Lock, Mail, ArrowRight, AlertCircle, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { CaptchaWidget } from '@/components/CaptchaWidget';
 
 export default function LoginPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [captchaToken, setCaptchaToken] = useState('');
+  const [captchaAnswer, setCaptchaAnswer] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -22,7 +25,7 @@ export default function LoginPage() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, captchaToken, captchaAnswer }),
       });
 
       const data = await res.json();
@@ -118,6 +121,15 @@ export default function LoginPage() {
               />
             </div>
           </div>
+
+          {/* Security anti-bot verification */}
+          <CaptchaWidget
+            onChallengeChange={(token, answer) => {
+              setCaptchaToken(token);
+              setCaptchaAnswer(answer);
+            }}
+            disabled={loading}
+          />
 
           <Button
             type="submit"

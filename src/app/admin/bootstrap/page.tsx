@@ -54,12 +54,19 @@ export default function AdminBootstrapPage() {
           </div>
           <div>
             <h2 className="text-xl font-bold text-slate-900">
-              Initial Administrator Activation
+              Administrator Setup (Locked Route)
             </h2>
             <p className="text-xs text-slate-500">
-              One-time secure server-side bootstrap procedure
+              This endpoint is locked and removed from public navigation
             </p>
           </div>
+        </div>
+
+        <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-xs text-red-800 flex items-center gap-2.5">
+          <Lock className="w-4 h-4 text-red-600 shrink-0" />
+          <span>
+            <strong>Security Notice:</strong> The bootstrap setup route has been disabled in the public footer and restricted to internal emergency operations only.
+          </span>
         </div>
 
         <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 space-y-2.5">

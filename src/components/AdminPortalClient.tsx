@@ -12,6 +12,7 @@ import {
   Profile,
   SiteSettings,
   Task,
+  TaskSubmission,
 } from '@/types';
 import {
   Users,
@@ -34,6 +35,9 @@ import {
   Download,
   Clock,
   Eye,
+  MessageSquare,
+  Sparkles,
+  RefreshCw,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 import { Modal } from '@/components/ui/Modal';
@@ -50,6 +54,7 @@ interface AdminPortalClientProps {
     issuedCertificates: number;
     totalDomains: number;
     totalTasks: number;
+    pendingTaskReviews?: number;
   };
   students: Profile[];
   enrollments: Enrollment[];
@@ -59,6 +64,7 @@ interface AdminPortalClientProps {
   certificates: Certificate[];
   siteSettings: SiteSettings;
   auditLogs: AdminAuditLog[];
+  taskSubmissions?: (TaskSubmission & { task?: Task; student?: Profile; domain?: Domain })[];
 }
 
 export const AdminPortalClient: React.FC<AdminPortalClientProps> = ({
@@ -71,11 +77,13 @@ export const AdminPortalClient: React.FC<AdminPortalClientProps> = ({
   certificates,
   siteSettings,
   auditLogs,
+  taskSubmissions = [],
 }) => {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<
     | 'overview'
     | 'students'
+    | 'reviews'
     | 'linkedin'
     | 'payments'
     | 'domains'
@@ -88,6 +96,19 @@ export const AdminPortalClient: React.FC<AdminPortalClientProps> = ({
   // Search queries
   const [studentSearch, setStudentSearch] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Profile | null>(null);
+
+  // Task Reviews State
+  const [reviewTaskModal, setReviewTaskModal] = useState<(TaskSubmission & {
+    task?: Task;
+    student?: Profile;
+    domain?: Domain;
+  }) | null>(null);
+  const [taskReviewFeedback, setTaskReviewFeedback] = useState('');
+  const [taskReviewStatus, setTaskReviewStatus] = useState<'approved' | 'changes_requested'>('approved');
+  const [taskReviewSearch, setTaskReviewSearch] = useState('');
+  const [taskCheckingMap, setTaskCheckingMap] = useState<
+    Record<string, { checking?: boolean; valid?: boolean; commitCount?: number; message?: string }>
+  >({});
 
   // Settings State
   const [upiId, setUpiId] = useState(siteSettings.upi_id || '');
@@ -120,6 +141,55 @@ export const AdminPortalClient: React.FC<AdminPortalClientProps> = ({
 
   // Domain Editing / Adding
   const [editDomainModal, setEditDomainModal] = useState<Partial<Domain> | null>(null);
+
+  // Task Review Handlers
+  const handleSaveTaskReview = async () => {
+    if (!reviewTaskModal || !taskReviewFeedback.trim()) return;
+    setActionLoading(true);
+    try {
+      const res = await fetch('/api/admin/tasks/review', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          submission_id: reviewTaskModal.id,
+          status: taskReviewStatus,
+          feedback: taskReviewFeedback.trim(),
+        }),
+      });
+      if (res.ok) {
+        setReviewTaskModal(null);
+        setTaskReviewFeedback('');
+        router.refresh();
+      }
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleQuickCheckGithub = async (submissionId: string, url: string) => {
+    setTaskCheckingMap((prev) => ({
+      ...prev,
+      [submissionId]: { checking: true },
+    }));
+    try {
+      const res = await fetch(`/api/tasks/check-github?url=${encodeURIComponent(url)}`);
+      const data = await res.json();
+      setTaskCheckingMap((prev) => ({
+        ...prev,
+        [submissionId]: {
+          checking: false,
+          valid: data.valid,
+          commitCount: data.commitCount,
+          message: data.message,
+        },
+      }));
+    } catch {
+      setTaskCheckingMap((prev) => ({
+        ...prev,
+        [submissionId]: { checking: false, valid: false, message: 'Check failed' },
+      }));
+    }
+  };
 
   // Handlers
   const handleApproveLinkedIn = async (id: string) => {
@@ -274,6 +344,15 @@ export const AdminPortalClient: React.FC<AdminPortalClientProps> = ({
         {[
           { key: 'overview', label: 'Overview', icon: <History className="w-4 h-4" /> },
           { key: 'students', label: `Students (${students.length})`, icon: <Users className="w-4 h-4" /> },
+          {
+            key: 'reviews',
+            label: `Task Reviews (${taskSubmissions.length})`,
+            icon: <CheckCircle2 className="w-4 h-4" />,
+            badge:
+              taskSubmissions.filter((s) => !s.review_status || s.review_status === 'pending_review').length > 0
+                ? taskSubmissions.filter((s) => !s.review_status || s.review_status === 'pending_review').length
+                : undefined,
+          },
           {
             key: 'linkedin',
             label: `LinkedIn (${pendingLinkedIn.length})`,
@@ -584,6 +663,175 @@ export const AdminPortalClient: React.FC<AdminPortalClientProps> = ({
               </tbody>
             </table>
           </div>
+        </div>
+      )}
+
+      {/* TASK REVIEWS TAB */}
+      {activeTab === 'reviews' && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="font-bold text-base text-slate-900">Student Task Submissions & Code Reviews</h3>
+              <p className="text-xs text-slate-500">
+                Inspect submitted GitHub projects, test repository health, and leave feedback comments
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                <input
+                  type="text"
+                  placeholder="Search student, task, or repo..."
+                  value={taskReviewSearch}
+                  onChange={(e) => setTaskReviewSearch(e.target.value)}
+                  className="pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-300 w-56 sm:w-64"
+                />
+              </div>
+            </div>
+          </div>
+
+          {taskSubmissions.length === 0 ? (
+            <div className="p-8 text-center text-xs text-slate-500 border border-dashed border-slate-200 rounded-xl">
+              No task submissions submitted yet.
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {taskSubmissions
+                .filter((sub) => {
+                  if (!taskReviewSearch.trim()) return true;
+                  const q = taskReviewSearch.toLowerCase();
+                  return (
+                    sub.student?.full_name?.toLowerCase().includes(q) ||
+                    sub.task?.title?.toLowerCase().includes(q) ||
+                    sub.github_url?.toLowerCase().includes(q) ||
+                    sub.domain?.name?.toLowerCase().includes(q)
+                  );
+                })
+                .map((sub) => {
+                  const check = taskCheckingMap[sub.id];
+                  return (
+                    <div
+                      key={sub.id}
+                      className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-3 text-xs"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-sm text-slate-900">
+                              {sub.student?.full_name || 'Student'}
+                            </span>
+                            <span className="text-slate-400">&bull;</span>
+                            <span className="text-slate-600 font-medium">
+                              {sub.domain?.name || 'Domain'}
+                            </span>
+                            <span className="text-slate-400">&bull;</span>
+                            <span className="text-blue-700 font-semibold">
+                              Task {sub.task?.display_order}: {sub.task?.title}
+                            </span>
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                            <a
+                              href={sub.github_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 font-semibold hover:underline flex items-center gap-1 font-mono text-[11px]"
+                            >
+                              <span>{sub.github_url}</span>
+                              <ExternalLink className="w-3 h-3" />
+                            </a>
+
+                            <button
+                              type="button"
+                              onClick={() => handleQuickCheckGithub(sub.id, sub.github_url)}
+                              disabled={check?.checking}
+                              className="px-2 py-0.5 rounded bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 text-[10px] font-semibold inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                            >
+                              {check?.checking ? (
+                                <>
+                                  <RefreshCw className="w-3 h-3 animate-spin" />
+                                  <span>Checking...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Sparkles className="w-3 h-3 text-blue-600" />
+                                  <span>Check Repo</span>
+                                </>
+                              )}
+                            </button>
+
+                            {check && !check.checking && (
+                              <span
+                                className={`px-2 py-0.5 rounded text-[10px] font-semibold ${
+                                  check.valid
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : 'bg-red-100 text-red-800'
+                                }`}
+                              >
+                                {check.valid
+                                  ? `Public Verified (${check.commitCount ?? 'active'} commits)`
+                                  : check.message || 'Repo check failed'}
+                              </span>
+                            )}
+                          </div>
+
+                          {sub.notes && (
+                            <div className="text-[11px] text-slate-500 italic">
+                              Student note: &quot;{sub.notes}&quot;
+                            </div>
+                          )}
+
+                          {sub.reviewer_feedback && (
+                            <div className="p-2.5 rounded-lg bg-white border border-slate-200 mt-2 space-y-1">
+                              <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1">
+                                <MessageSquare className="w-3 h-3 text-slate-600" />
+                                <span>Current Feedback ({sub.review_status}):</span>
+                              </div>
+                              <p className="text-slate-700 text-xs">{sub.reviewer_feedback}</p>
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span
+                            className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                              sub.review_status === 'approved'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : sub.review_status === 'changes_requested'
+                                ? 'bg-amber-100 text-amber-800'
+                                : 'bg-blue-100 text-blue-800'
+                            }`}
+                          >
+                            {sub.review_status === 'approved'
+                              ? 'Approved'
+                              : sub.review_status === 'changes_requested'
+                              ? 'Changes Requested'
+                              : 'Pending Review'}
+                          </span>
+
+                          <Button
+                            size="sm"
+                            variant="primary"
+                            onClick={() => {
+                              setReviewTaskModal(sub);
+                              setTaskReviewStatus(
+                                sub.review_status === 'changes_requested'
+                                  ? 'changes_requested'
+                                  : 'approved'
+                              );
+                              setTaskReviewFeedback(sub.reviewer_feedback || '');
+                            }}
+                          >
+                            Review / Feedback
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
         </div>
       )}
 
@@ -1279,6 +1527,98 @@ export const AdminPortalClient: React.FC<AdminPortalClientProps> = ({
               </Button>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {/* Review Task Modal */}
+      {reviewTaskModal && (
+        <Modal
+          isOpen={true}
+          onClose={() => setReviewTaskModal(null)}
+          title={`Review Task: ${reviewTaskModal.task?.title || 'Milestone'}`}
+        >
+          <div className="space-y-4 text-xs">
+            <div className="p-3 bg-slate-50 rounded-xl space-y-1.5 border border-slate-200">
+              <div className="flex justify-between items-center">
+                <span className="font-bold text-slate-900">{reviewTaskModal.student?.full_name}</span>
+                <span className="text-slate-500">{reviewTaskModal.domain?.name}</span>
+              </div>
+              <div className="text-slate-600">
+                <a
+                  href={reviewTaskModal.github_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 font-semibold hover:underline flex items-center gap-1 font-mono text-[11px]"
+                >
+                  <span>{reviewTaskModal.github_url}</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+              {reviewTaskModal.notes && (
+                <p className="text-[11px] text-slate-500 italic">
+                  Note: {reviewTaskModal.notes}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block font-semibold text-slate-700">Review Decision *</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTaskReviewStatus('approved')}
+                  className={`py-2 px-3 rounded-xl border text-xs font-semibold cursor-pointer transition-all ${
+                    taskReviewStatus === 'approved'
+                      ? 'bg-emerald-50 border-emerald-500 text-emerald-800'
+                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  Approved
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setTaskReviewStatus('changes_requested')}
+                  className={`py-2 px-3 rounded-xl border text-xs font-semibold cursor-pointer transition-all ${
+                    taskReviewStatus === 'changes_requested'
+                      ? 'bg-amber-50 border-amber-500 text-amber-800'
+                      : 'bg-white border-slate-200 text-slate-600 hover:bg-slate-50'
+                  }`}
+                >
+                  Changes Requested
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor="task_feedback_text" className="block font-semibold text-slate-700">
+                Reviewer Comments & Constructive Rubric Feedback *
+              </label>
+              <textarea
+                id="task_feedback_text"
+                rows={4}
+                required
+                value={taskReviewFeedback}
+                onChange={(e) => setTaskReviewFeedback(e.target.value)}
+                placeholder="e.g. Clean code structure, functional tests verified. Great git commit messages according to our review rubric. Approved!"
+                className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 resize-none focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <Button variant="ghost" size="sm" onClick={() => setReviewTaskModal(null)}>
+                Cancel
+              </Button>
+              <Button
+                size="sm"
+                variant={taskReviewStatus === 'approved' ? 'success' : 'primary'}
+                onClick={handleSaveTaskReview}
+                isLoading={actionLoading}
+                disabled={!taskReviewFeedback.trim()}
+              >
+                Save Evaluation
+              </Button>
+            </div>
+          </div>
         </Modal>
       )}
 

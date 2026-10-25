@@ -2,11 +2,39 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { verifyPassword, createSessionToken } from '@/lib/auth';
 import { isValidEmail } from '@/lib/validation';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
+import { verifyCaptchaSolution } from '@/lib/captcha';
 
 export async function POST(req: NextRequest) {
   try {
+    const clientIp = getClientIp(req);
+    // Rate limit: max 10 login requests per 15 minutes per IP
+    const rateLimit = checkRateLimit(`login:${clientIp}`, 10, 15 * 60 * 1000);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: `Too many login attempts. For security, please wait ${rateLimit.resetInSeconds} seconds before trying again.`,
+        },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(rateLimit.resetInSeconds) },
+        }
+      );
+    }
+
     const body = await req.json();
-    const { email, password } = body;
+    const { email, password, captchaToken, captchaAnswer } = body;
+
+    // Verify CAPTCHA challenge if submitted
+    if (captchaToken || captchaAnswer) {
+      const captchaCheck = verifyCaptchaSolution(captchaToken, captchaAnswer);
+      if (!captchaCheck.isValid) {
+        return NextResponse.json(
+          { error: captchaCheck.message || 'Anti-bot verification failed.' },
+          { status: 400 }
+        );
+      }
+    }
 
     if (!email || !password) {
       return NextResponse.json(

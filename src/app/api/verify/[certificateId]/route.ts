@@ -1,11 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 
 export async function GET(
   req: NextRequest,
   context: { params: Promise<{ certificateId: string }> }
 ) {
   try {
+    const clientIp = getClientIp(req);
+    // Rate limit: max 30 lookups per minute to prevent brute-force ID guessing
+    const rateLimit = checkRateLimit(`verify:${clientIp}`, 30, 60 * 1000);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded. Please wait a moment before verifying another certificate.' },
+        { status: 429, headers: { 'Retry-After': String(rateLimit.resetInSeconds) } }
+      );
+    }
+
     const { certificateId } = await context.params;
 
     if (!certificateId) {

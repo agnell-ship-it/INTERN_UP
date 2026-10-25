@@ -1,12 +1,52 @@
 import { NextRequest, NextResponse } from 'next/server';
+import crypto from 'crypto';
 import { db } from '@/lib/db';
 import { hashPassword, createSessionToken } from '@/lib/auth';
 import { isValidEmail, isValidPassword } from '@/lib/validation';
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
+import { verifyCaptchaSolution } from '@/lib/captcha';
+import { COMPANY_INFO } from '@/lib/constants';
 
 export async function POST(req: NextRequest) {
   try {
+    const clientIp = getClientIp(req);
+    // Rate limit: max 5 registrations per 15 minutes per IP
+    const rateLimit = checkRateLimit(`register:${clientIp}`, 5, 15 * 60 * 1000);
+    if (!rateLimit.allowed) {
+      return NextResponse.json(
+        {
+          error: `Registration rate limit reached. For security, please wait ${rateLimit.resetInSeconds} seconds before creating another account.`,
+        },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(rateLimit.resetInSeconds) },
+        }
+      );
+    }
+
     const body = await req.json();
-    const { full_name, email, password, phone, college, degree, graduation_year } = body;
+    const {
+      full_name,
+      email,
+      password,
+      phone,
+      college,
+      degree,
+      graduation_year,
+      captchaToken,
+      captchaAnswer,
+    } = body;
+
+    // Verify anti-bot CAPTCHA if challenge passed
+    if (captchaToken || captchaAnswer) {
+      const captchaCheck = verifyCaptchaSolution(captchaToken, captchaAnswer);
+      if (!captchaCheck.isValid) {
+        return NextResponse.json(
+          { error: captchaCheck.message || 'Anti-bot verification failed.' },
+          { status: 400 }
+        );
+      }
+    }
 
     // Server-side validation
     if (!full_name || typeof full_name !== 'string' || full_name.trim().length < 2) {
@@ -42,12 +82,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Generate 6-digit email verification code and secure token
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationToken = crypto.randomBytes(16).toString('hex');
+    await db.saveEmailVerificationToken(cleanEmail, verificationToken, verificationCode, 1440);
+
     // Hash password securely
     const { salt, hash } = hashPassword(password);
 
     // CRITICAL SECURITY RULE: Registration ALWAYS creates a student account.
     // Never accept role from user input.
     const userId = `usr_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const isOwner = cleanEmail === COMPANY_INFO.initialAdminEmail.toLowerCase().trim();
+
     const profile = await db.createProfile({
       id: userId,
       email: cleanEmail,
@@ -57,7 +104,7 @@ export async function POST(req: NextRequest) {
       degree: degree?.trim() || '',
       graduation_year: graduation_year?.trim() || '',
       role: 'student',
-      email_verified: true, // Auto-verified for streamlined onboarding
+      email_verified: isOwner, // Owner account auto-verified; students verify email via code/link
     });
 
     // Save auth credential
@@ -76,6 +123,13 @@ export async function POST(req: NextRequest) {
         email: profile.email,
         full_name: profile.full_name,
         role: profile.role,
+        email_verified: profile.email_verified,
+      },
+      emailVerification: {
+        required: !profile.email_verified,
+        code: verificationCode,
+        token: verificationToken,
+        message: 'A 6-digit verification code has been dispatched to your email address.',
       },
     });
 

@@ -11,13 +11,28 @@ import {
   ChevronUp,
   AlertCircle,
   Save,
+  MessageSquare,
+  Sparkles,
+  RefreshCw,
+  Clock,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { formatISTDate } from '@/lib/date-utils';
 
 interface TaskSubmissionItemProps {
   task: Task;
   submission?: TaskSubmission;
   enrollmentId: string;
+}
+
+interface RepoCheckStatus {
+  checked: boolean;
+  valid?: boolean;
+  repoName?: string;
+  isPublic?: boolean;
+  hasRecentCommits?: boolean;
+  commitCount?: number;
+  message?: string;
 }
 
 export const TaskSubmissionItem: React.FC<TaskSubmissionItemProps> = ({
@@ -32,8 +47,43 @@ export const TaskSubmissionItem: React.FC<TaskSubmissionItemProps> = ({
   const [githubUrl, setGithubUrl] = useState(submission?.github_url || '');
   const [notes, setNotes] = useState(submission?.notes || '');
   const [loading, setLoading] = useState(false);
+  const [checkingRepo, setCheckingRepo] = useState(false);
+  const [repoStatus, setRepoStatus] = useState<RepoCheckStatus | null>(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+
+  const handleVerifyRepo = async () => {
+    if (!githubUrl.trim()) {
+      setError('Please enter a GitHub repository URL first.');
+      return;
+    }
+
+    setCheckingRepo(true);
+    setRepoStatus(null);
+    setError('');
+
+    try {
+      const res = await fetch(`/api/tasks/check-github?url=${encodeURIComponent(githubUrl.trim())}`);
+      const data = await res.json();
+      setRepoStatus({
+        checked: true,
+        valid: data.valid,
+        repoName: data.repoName,
+        isPublic: data.isPublic,
+        hasRecentCommits: data.hasRecentCommits,
+        commitCount: data.commitCount,
+        message: data.message,
+      });
+    } catch {
+      setRepoStatus({
+        checked: true,
+        valid: false,
+        message: 'Could not connect to GitHub check service.',
+      });
+    } finally {
+      setCheckingRepo(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,10 +150,22 @@ export const TaskSubmissionItem: React.FC<TaskSubmissionItemProps> = ({
               <span>Milestone {task.display_order} of 5</span>
               <span>&bull;</span>
               {isSubmitted ? (
-                <span className="text-emerald-600 font-semibold flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>GitHub Link Submitted</span>
-                </span>
+                submission?.review_status === 'approved' ? (
+                  <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Approved by Mentor</span>
+                  </span>
+                ) : submission?.review_status === 'changes_requested' ? (
+                  <span className="text-amber-700 font-semibold flex items-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5" />
+                    <span>Changes Requested</span>
+                  </span>
+                ) : (
+                  <span className="text-blue-700 font-semibold flex items-center gap-1">
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Submitted &bull; Under Review</span>
+                  </span>
+                )
               ) : (
                 <span className="text-amber-600 font-medium">Pending Submission</span>
               )}
@@ -158,6 +220,41 @@ export const TaskSubmissionItem: React.FC<TaskSubmissionItemProps> = ({
             </div>
           )}
 
+          {/* Mentor Feedback Section if present */}
+          {submission?.reviewer_feedback && (
+            <div
+              className={`p-4 rounded-xl border space-y-2 ${
+                submission.review_status === 'approved'
+                  ? 'bg-emerald-50/60 border-emerald-200 text-emerald-950'
+                  : 'bg-amber-50/70 border-amber-200 text-amber-950'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5 font-bold text-xs">
+                  <MessageSquare className="w-4 h-4 text-slate-700" />
+                  <span>Mentor Reviewer Evaluation</span>
+                </div>
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                    submission.review_status === 'approved'
+                      ? 'bg-emerald-200/80 text-emerald-900'
+                      : 'bg-amber-200/80 text-amber-900'
+                  }`}
+                >
+                  {submission.review_status === 'approved' ? 'Approved' : 'Action Required'}
+                </span>
+              </div>
+              <p className="text-xs leading-relaxed text-slate-700 whitespace-pre-line">
+                {submission.reviewer_feedback}
+              </p>
+              {submission.reviewed_at && (
+                <div className="text-[10px] text-slate-500 pt-1">
+                  Reviewed on {formatISTDate(submission.reviewed_at)}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Submission Form */}
           <div className="pt-2 border-t border-slate-100 space-y-3">
             {error && (
@@ -176,12 +273,33 @@ export const TaskSubmissionItem: React.FC<TaskSubmissionItemProps> = ({
 
             <form onSubmit={handleSubmit} className="space-y-3">
               <div>
-                <label
-                  htmlFor={`github_url_${task.id}`}
-                  className="block text-[11px] font-semibold uppercase tracking-wider text-slate-700 mb-1"
-                >
-                  GitHub Repository / Project URL *
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label
+                    htmlFor={`github_url_${task.id}`}
+                    className="block text-[11px] font-semibold uppercase tracking-wider text-slate-700"
+                  >
+                    GitHub Repository / Project URL *
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleVerifyRepo}
+                    disabled={checkingRepo || !githubUrl.trim()}
+                    className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 disabled:opacity-40 inline-flex items-center gap-1 cursor-pointer"
+                  >
+                    {checkingRepo ? (
+                      <>
+                        <RefreshCw className="w-3 h-3 animate-spin" />
+                        <span>Checking GitHub...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-3 h-3" />
+                        <span>Auto-Check Repo</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
                 <div className="relative">
                   <GitBranch className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                   <input
@@ -189,11 +307,41 @@ export const TaskSubmissionItem: React.FC<TaskSubmissionItemProps> = ({
                     type="url"
                     required
                     value={githubUrl}
-                    onChange={(e) => setGithubUrl(e.target.value)}
+                    onChange={(e) => {
+                      setGithubUrl(e.target.value);
+                      if (repoStatus) setRepoStatus(null);
+                    }}
                     placeholder="https://github.com/username/repository-name"
                     className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-slate-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
                   />
                 </div>
+
+                {/* Repo live check status banner */}
+                {repoStatus && repoStatus.checked && (
+                  <div className="mt-2">
+                    {repoStatus.valid ? (
+                      <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                          <span>
+                            Verified public repository:{' '}
+                            <strong className="font-mono">{repoStatus.repoName}</strong>
+                          </span>
+                        </div>
+                        {repoStatus.commitCount !== undefined && (
+                          <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                            {repoStatus.commitCount} commits detected
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-[11px] flex items-center gap-1.5">
+                        <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                        <span>{repoStatus.message || 'Repository could not be verified on GitHub.'}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div>

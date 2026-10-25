@@ -101,16 +101,13 @@ export const Footer: React.FC = () => {
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="hover:text-blue-400 transition-colors">
-                  Support & Contact
+                <Link href="/registry" className="hover:text-blue-400 transition-colors">
+                  Certificate Registry
                 </Link>
               </li>
-              <li className="pt-2">
-                <Link
-                  href="/admin/bootstrap"
-                  className="text-amber-400/80 hover:text-amber-300 text-[11px] flex items-center gap-1"
-                >
-                  <span>Owner / Admin Setup</span>
+              <li>
+                <Link href="/contact" className="hover:text-blue-400 transition-colors">
+                  Support & Contact
                 </Link>
               </li>
             </ul>
@@ -119,27 +116,27 @@ export const Footer: React.FC = () => {
           {/* Policies & Compliance */}
           <div>
             <h4 className="text-sm font-semibold uppercase tracking-wider text-white mb-4">
-              Policies & Notice
+              Policies & Compliance
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
                 <Link href="/terms" className="hover:text-blue-400 transition-colors">
-                  Terms of Service (Draft)
+                  Terms of Service
                 </Link>
               </li>
               <li>
                 <Link href="/privacy" className="hover:text-blue-400 transition-colors">
-                  Privacy Policy (Draft)
+                  Privacy Policy
                 </Link>
               </li>
               <li>
                 <Link href="/refund-policy" className="hover:text-blue-400 transition-colors">
-                  Refund Policy (Draft)
+                  Refund Policy
                 </Link>
               </li>
               <li>
                 <Link href="/certificate-policy" className="hover:text-blue-400 transition-colors">
-                  Certificate Policy (Draft)
+                  Certificate Policy
                 </Link>
               </li>
             </ul>

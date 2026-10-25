@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { db } from '@/lib/db';
 import { isValidGitHubUrl } from '@/lib/validation';
+import { verifyGitHubRepository } from '@/lib/github-checker';
 
 export async function POST(req: NextRequest) {
   try {
@@ -20,10 +21,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate GitHub URL
+    // Validate GitHub URL format
     const urlCheck = isValidGitHubUrl(github_url);
     if (!urlCheck.isValid) {
       return NextResponse.json({ error: urlCheck.message }, { status: 400 });
+    }
+
+    // Live auto-check repository existence and public access on GitHub
+    const repoCheck = await verifyGitHubRepository(github_url);
+    if (!repoCheck.isValid) {
+      return NextResponse.json({ error: repoCheck.message }, { status: 400 });
     }
 
     const submission = await db.submitTask(

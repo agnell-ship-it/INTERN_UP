@@ -16,7 +16,7 @@ interface PdfPreviewModalProps {
   onClose: () => void;
   title: string;
   pdfUrl: string;
-  documentType?: 'Offer Letter' | 'Completion Certificate';
+  documentType?: 'Enrollment Letter' | 'Offer Letter' | 'Completion Certificate';
   verificationId?: string;
 }
 

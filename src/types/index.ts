@@ -36,6 +36,8 @@ export interface Task {
   suggested_tools: string;
   reference_links?: string[];
   display_order: number; // 1 to 5
+  difficulty?: 'Beginner' | 'Intermediate' | 'Advanced';
+  estimated_hours?: number;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -65,6 +67,10 @@ export interface TaskSubmission {
   student_id: string;
   github_url: string;
   notes?: string;
+  review_status?: 'pending_review' | 'approved' | 'changes_requested';
+  reviewer_feedback?: string;
+  reviewed_at?: string;
+  reviewed_by?: string;
   submitted_at: string;
   updated_at: string;
   task?: Task;

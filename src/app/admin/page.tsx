@@ -70,6 +70,7 @@ export default async function AdminPage() {
     certificates,
     siteSettings,
     auditLogs,
+    taskSubmissions,
   ] = await Promise.all([
     db.getAdminStats(),
     db.getAllStudents(),
@@ -80,6 +81,7 @@ export default async function AdminPage() {
     db.getAllCertificates(),
     db.getSiteSettings(),
     db.getAuditLogs(100),
+    db.getAllTaskSubmissions(),
   ]);
 
   return (
@@ -121,6 +123,7 @@ export default async function AdminPage() {
         certificates={certificates}
         siteSettings={siteSettings}
         auditLogs={auditLogs}
+        taskSubmissions={taskSubmissions}
       />
     </div>
   );

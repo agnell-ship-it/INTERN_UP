@@ -17,13 +17,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 2. Check if bootstrap already completed permanently
+    // 2. Check if bootstrap already completed permanently or locked
     const settings = await db.getSiteSettings();
-    if (settings.is_bootstrap_completed) {
+    const isLocked = settings.is_bootstrap_completed || process.env.DISABLE_BOOTSTRAP === 'true';
+    if (isLocked) {
       return NextResponse.json(
         {
           error:
-            'Initial administrator bootstrap has already been permanently closed. No further promotion is permitted.',
+            'Initial administrator bootstrap route has been permanently locked and disabled for security.',
         },
         { status: 403 }
       );

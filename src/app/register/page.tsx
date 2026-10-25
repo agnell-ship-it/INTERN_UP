@@ -3,8 +3,9 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { GraduationCap, Lock, Mail, User, Phone, School, BookOpen, ArrowRight, AlertCircle } from 'lucide-react';
+import { GraduationCap, Lock, Mail, User, Phone, School, BookOpen, ArrowRight, AlertCircle, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { CaptchaWidget } from '@/components/CaptchaWidget';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -17,6 +18,8 @@ export default function RegisterPage() {
     degree: '',
     graduation_year: '',
   });
+  const [captchaToken, setCaptchaToken] = useState('');
+  const [captchaAnswer, setCaptchaAnswer] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -39,13 +42,24 @@ export default function RegisterPage() {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          captchaToken,
+          captchaAnswer,
+        }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
         throw new Error(data.error || 'Registration failed. Please try again.');
+      }
+
+      if (data.emailVerification?.required) {
+        // Redirect to email verification with code
+        router.push(`/verify-email?code=${data.emailVerification.code || ''}`);
+        router.refresh();
+        return;
       }
 
       const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
@@ -122,7 +136,7 @@ export default function RegisterPage() {
               />
             </div>
             <p className="text-[11px] text-slate-400 mt-0.5">
-              This exact name will appear on your Offer Letter and Completion Certificate.
+              This exact name will appear on your Enrollment Letter and Completion Certificate.
             </p>
           </div>
 
@@ -239,6 +253,15 @@ export default function RegisterPage() {
               </div>
             </div>
           </div>
+
+          {/* Anti-bot CAPTCHA verification */}
+          <CaptchaWidget
+            onChallengeChange={(token, answer) => {
+              setCaptchaToken(token);
+              setCaptchaAnswer(answer);
+            }}
+            disabled={loading}
+          />
 
           <Button
             type="submit"

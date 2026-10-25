@@ -12,8 +12,12 @@ import {
   LogOut,
   ChevronRight,
   User,
+  FileCode2,
 } from 'lucide-react';
 import { Profile } from '@/types';
+import { ThemeToggle } from './ThemeToggle';
+import { LiveActivityTicker } from './LiveActivityTicker';
+import { RepoPrepKitModal } from './RepoPrepKitModal';
 
 interface NavbarProps {
   currentUser?: Profile | null;
@@ -21,6 +25,7 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({ currentUser }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showKitModal, setShowKitModal] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
 
@@ -39,6 +44,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentUser }) => {
     { label: 'Domains', href: '/domains' },
     { label: 'How It Works', href: '/how-it-works' },
     { label: 'About', href: '/about' },
+    { label: 'Registry', href: '/registry' },
     { label: 'FAQ', href: '/faq' },
     { label: 'Contact', href: '/contact' },
   ];
@@ -49,14 +55,18 @@ export const Navbar: React.FC<NavbarProps> = ({ currentUser }) => {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-white/90 backdrop-blur-md border-b border-slate-200/80 transition-all">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
-          {/* Logo */}
-          <Link
-            href="/"
-            className="flex items-center gap-2.5 font-bold text-slate-900 group"
-          >
+    <>
+      {/* Live sprint activity feed ticker */}
+      <LiveActivityTicker />
+
+      <header className="sticky top-0 z-40 w-full bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 transition-colors">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            {/* Logo */}
+            <Link
+              href="/"
+              className="flex items-center gap-2.5 font-bold text-slate-900 dark:text-white group"
+            >
             <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-sm group-hover:bg-blue-700 transition-colors">
               <GraduationCap className="w-5 h-5" />
             </div>
@@ -78,8 +88,8 @@ export const Navbar: React.FC<NavbarProps> = ({ currentUser }) => {
                 href={link.href}
                 className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
                   isActive(link.href)
-                    ? 'text-blue-600 bg-blue-50 font-semibold'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                    ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 font-semibold'
+                    : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100/70 dark:hover:bg-slate-800/70'
                 }`}
               >
                 {link.label}
@@ -87,53 +97,70 @@ export const Navbar: React.FC<NavbarProps> = ({ currentUser }) => {
             ))}
           </nav>
 
-          {/* Desktop Auth State */}
-          <div className="hidden md:flex items-center gap-3">
+          {/* Desktop Actions & Auth */}
+          <div className="hidden md:flex items-center gap-2.5">
+            {/* Repo Kit Trigger */}
+            <button
+              type="button"
+              onClick={() => setShowKitModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
+              title="GitHub Readme & Rubric Preparation Kit"
+            >
+              <FileCode2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+              <span>GitHub Kit</span>
+            </button>
+
+            {/* Dark / Light Mode Toggle */}
+            <ThemeToggle />
+
             {currentUser ? (
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200 dark:border-slate-800">
                 {currentUser.role === 'admin' ? (
                   <Link
                     href="/admin"
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-500/10 text-amber-700 border border-amber-300 hover:bg-amber-500/20 transition-colors"
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-300 dark:border-amber-700 hover:bg-amber-500/20 transition-colors"
                   >
                     <ShieldCheck className="w-3.5 h-3.5" />
-                    <span>Admin Portal</span>
+                    <span>Admin</span>
                   </Link>
                 ) : null}
 
                 <Link
                   href="/dashboard"
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-colors"
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-colors"
                 >
                   <LayoutDashboard className="w-3.5 h-3.5" />
                   <span>Dashboard</span>
                 </Link>
 
-                <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
-                  <div className="flex items-center gap-1.5 text-xs text-slate-700 font-medium max-w-[130px] truncate" title={currentUser.full_name}>
+                <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800">
+                  <div
+                    className="flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-300 font-medium max-w-[120px] truncate"
+                    title={currentUser.full_name}
+                  >
                     <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                     <span className="truncate">{currentUser.full_name}</span>
                   </div>
                   <button
                     onClick={handleLogout}
                     title="Log Out"
-                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                    className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition-colors cursor-pointer"
                   >
                     <LogOut className="w-4 h-4" />
                   </button>
                 </div>
               </div>
             ) : (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800">
                 <Link
                   href="/login"
-                  className="px-3.5 py-1.5 rounded-lg text-sm font-medium text-slate-700 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+                  className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/register"
-                  className="flex items-center gap-1 px-4 py-1.5 rounded-lg text-sm font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-colors"
+                  className="flex items-center gap-1 px-4 py-1.5 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-colors"
                 >
                   <span>Enroll Now</span>
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -142,18 +169,15 @@ export const Navbar: React.FC<NavbarProps> = ({ currentUser }) => {
             )}
           </div>
 
-          {/* Mobile menu button */}
-          <div className="flex items-center md:hidden">
+          {/* Mobile menu button & quick toggle */}
+          <div className="flex items-center gap-2 md:hidden">
+            <ThemeToggle />
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+              className="p-2 rounded-xl text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               aria-label="Toggle navigation menu"
             >
-              {mobileMenuOpen ? (
-                <X className="w-6 h-6" />
-              ) : (
-                <Menu className="w-6 h-6" />
-              )}
+              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
           </div>
         </div>
@@ -161,17 +185,17 @@ export const Navbar: React.FC<NavbarProps> = ({ currentUser }) => {
 
       {/* Mobile menu dropdown */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-b border-slate-200 bg-white px-4 pt-2 pb-5 space-y-2 shadow-lg animate-in slide-in-from-top-2 duration-150">
+        <div className="md:hidden border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 pt-2 pb-5 space-y-3 shadow-xl animate-in slide-in-from-top-2 duration-150">
           <div className="space-y-1">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 onClick={() => setMobileMenuOpen(false)}
-                className={`block px-3 py-2 rounded-lg text-base font-medium ${
+                className={`block px-3 py-2 rounded-xl text-sm font-medium ${
                   isActive(link.href)
-                    ? 'text-blue-600 bg-blue-50 font-semibold'
-                    : 'text-slate-700 hover:bg-slate-100'
+                    ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 font-semibold'
+                    : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
                 }`}
               >
                 {link.label}
@@ -179,17 +203,30 @@ export const Navbar: React.FC<NavbarProps> = ({ currentUser }) => {
             ))}
           </div>
 
-          <div className="pt-3 border-t border-slate-100 space-y-2">
+          {/* Mobile GitHub Kit Action */}
+          <button
+            type="button"
+            onClick={() => {
+              setMobileMenuOpen(false);
+              setShowKitModal(true);
+            }}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700"
+          >
+            <FileCode2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            <span>Open GitHub Readme &amp; Prep Kit</span>
+          </button>
+
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-2">
             {currentUser ? (
               <div className="space-y-2">
-                <div className="px-3 py-1 text-xs text-slate-500">
-                  Signed in as <span className="font-semibold text-slate-800">{currentUser.full_name}</span>
+                <div className="px-3 py-1 text-xs text-slate-500 dark:text-slate-400">
+                  Signed in as <span className="font-semibold text-slate-800 dark:text-slate-200">{currentUser.full_name}</span>
                 </div>
                 {currentUser.role === 'admin' && (
                   <Link
                     href="/admin"
                     onClick={() => setMobileMenuOpen(false)}
-                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold bg-amber-50 text-amber-800 border border-amber-200"
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold bg-amber-50 dark:bg-amber-950/50 text-amber-800 dark:text-amber-200 border border-amber-200 dark:border-amber-800"
                   >
                     <ShieldCheck className="w-4 h-4 text-amber-600" />
                     <span>Admin Portal</span>
@@ -198,7 +235,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentUser }) => {
                 <Link
                   href="/dashboard"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white"
+                  className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-xs font-semibold bg-blue-600 text-white shadow-xs"
                 >
                   <LayoutDashboard className="w-4 h-4" />
                   <span>Student Dashboard</span>
@@ -208,7 +245,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentUser }) => {
                     setMobileMenuOpen(false);
                     handleLogout();
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 text-left cursor-pointer"
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 text-left cursor-pointer"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>Sign Out</span>
@@ -219,14 +256,14 @@ export const Navbar: React.FC<NavbarProps> = ({ currentUser }) => {
                 <Link
                   href="/login"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="px-3 py-2 text-center rounded-lg text-sm font-medium border border-slate-300 text-slate-700"
+                  className="px-3 py-2 text-center rounded-xl text-xs font-semibold border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300"
                 >
                   Sign In
                 </Link>
                 <Link
                   href="/register"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="px-3 py-2 text-center rounded-lg text-sm font-semibold bg-blue-600 text-white shadow-xs"
+                  className="px-3 py-2 text-center rounded-xl text-xs font-semibold bg-blue-600 text-white shadow-xs"
                 >
                   Enroll Now
                 </Link>
@@ -236,5 +273,12 @@ export const Navbar: React.FC<NavbarProps> = ({ currentUser }) => {
         </div>
       )}
     </header>
+
+    {/* Global GitHub Readme & Prep Kit Modal */}
+    <RepoPrepKitModal
+      isOpen={showKitModal}
+      onClose={() => setShowKitModal(false)}
+    />
+  </>
   );
 };

@@ -1,4 +1,5 @@
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import QRCode from 'qrcode';
 import { COMPANY_INFO } from './constants';
 import { formatISTDate } from './date-utils';
 
@@ -12,6 +13,8 @@ export interface OfferLetterData {
   deadlineDateISO: string;
 }
 
+export type EnrollmentLetterData = OfferLetterData;
+
 export interface CertificateData {
   certificateId: string;
   studentName: string;
@@ -22,9 +25,9 @@ export interface CertificateData {
 }
 
 /**
- * Generates an official Offer Letter as a PDF document
+ * Generates an official Enrollment Letter as a PDF document
  */
-export async function generateOfferLetterPdf(data: OfferLetterData): Promise<Uint8Array> {
+export async function generateEnrollmentLetterPdf(data: EnrollmentLetterData): Promise<Uint8Array> {
   const doc = await PDFDocument.create();
   const page = doc.addPage([595.28, 841.89]); // A4 in points
   const { width, height } = page.getSize();
@@ -251,7 +254,7 @@ export async function generateOfferLetterPdf(data: OfferLetterData): Promise<Uin
     color: grayLight,
   });
 
-  // Security seal badge on bottom right
+  // Security seal badge on bottom right with verification QR code
   page.drawRectangle({
     x: width - 210,
     y: sigY,
@@ -262,22 +265,40 @@ export async function generateOfferLetterPdf(data: OfferLetterData): Promise<Uin
     borderWidth: 1,
   });
 
+  try {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://intern-up.com';
+    const qrBuffer = await QRCode.toBuffer(`${appUrl}/verify`, {
+      type: 'png',
+      margin: 0,
+      width: 100,
+    });
+    const qrImage = await doc.embedPng(qrBuffer);
+    page.drawImage(qrImage, {
+      x: width - 204,
+      y: sigY + 4,
+      width: 40,
+      height: 40,
+    });
+  } catch {
+    // Fallback if QR fails
+  }
+
   page.drawText('DIGITALLY ISSUED', {
-    x: width - 180,
+    x: width - 158,
     y: sigY + 30,
     size: 8,
     font: fontBold,
     color: blue,
   });
   page.drawText(`ID: ${data.documentId}`, {
-    x: width - 195,
+    x: width - 158,
     y: sigY + 18,
     size: 7,
     font: fontRegular,
     color: grayDark,
   });
-  page.drawText('INTERN-UP PORTAL', {
-    x: width - 180,
+  page.drawText('INTERN-UP REGISTRY', {
+    x: width - 158,
     y: sigY + 7,
     size: 7,
     font: fontBold,
@@ -286,6 +307,11 @@ export async function generateOfferLetterPdf(data: OfferLetterData): Promise<Uin
 
   return await doc.save();
 }
+
+/**
+ * Backward compatibility alias for generateOfferLetterPdf
+ */
+export const generateOfferLetterPdf = generateEnrollmentLetterPdf;
 
 /**
  * Generates an official Completion Certificate as a PDF document (Landscape)
@@ -424,28 +450,77 @@ export async function generateCertificatePdf(data: CertificateData): Promise<Uin
   // Bottom Signatures & Verification Area
   const bottomY = 70;
 
-  // Left: Verification & ID
-  page.drawText('Certificate Identifier:', {
-    x: 60,
-    y: bottomY + 30,
-    size: 8.5,
-    font: fontBold,
-    color: grayDark,
-  });
-  page.drawText(data.certificateId, {
-    x: 60,
-    y: bottomY + 16,
-    size: 11,
-    font: fontBold,
-    color: blue,
-  });
-  page.drawText(`Verify at intern-up /verify/${data.certificateId}`, {
-    x: 60,
-    y: bottomY + 4,
-    size: 7.5,
-    font: fontOblique,
-    color: grayLight,
-  });
+  // Embedded Verifiable QR Code linking directly to /verify/[certificateId]
+  try {
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://intern-up.com';
+    const verifyUrl = `${appUrl}/verify/${encodeURIComponent(data.certificateId)}`;
+    const qrBuffer = await QRCode.toBuffer(verifyUrl, {
+      type: 'png',
+      margin: 1,
+      width: 140,
+      errorCorrectionLevel: 'M',
+    });
+    const qrImage = await doc.embedPng(qrBuffer);
+    page.drawImage(qrImage, {
+      x: 60,
+      y: bottomY - 14,
+      width: 56,
+      height: 56,
+    });
+
+    // Verification details text next to QR code
+    page.drawText('OFFICIAL VERIFICATION QR', {
+      x: 126,
+      y: bottomY + 32,
+      size: 7.5,
+      font: fontBold,
+      color: grayDark,
+    });
+    page.drawText(data.certificateId, {
+      x: 126,
+      y: bottomY + 18,
+      size: 11,
+      font: fontBold,
+      color: blue,
+    });
+    page.drawText('Scan QR or verify online at:', {
+      x: 126,
+      y: bottomY + 6,
+      size: 7.5,
+      font: fontRegular,
+      color: grayLight,
+    });
+    page.drawText(`${appUrl}/verify/${data.certificateId}`, {
+      x: 126,
+      y: bottomY - 5,
+      size: 7,
+      font: fontOblique,
+      color: blue,
+    });
+  } catch {
+    // Fallback if QR generation fails
+    page.drawText('Certificate Identifier:', {
+      x: 60,
+      y: bottomY + 30,
+      size: 8.5,
+      font: fontBold,
+      color: grayDark,
+    });
+    page.drawText(data.certificateId, {
+      x: 60,
+      y: bottomY + 16,
+      size: 11,
+      font: fontBold,
+      color: blue,
+    });
+    page.drawText(`Verify at intern-up /verify/${data.certificateId}`, {
+      x: 60,
+      y: bottomY + 4,
+      size: 7.5,
+      font: fontOblique,
+      color: grayLight,
+    });
+  }
 
   // Right: Founder Signature
   page.drawLine({

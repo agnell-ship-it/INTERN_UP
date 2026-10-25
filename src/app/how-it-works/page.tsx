@@ -16,6 +16,7 @@ import {
   Info,
 } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
+import { ReviewRubricSection } from '@/components/ReviewRubricSection';
 
 export default function HowItWorksPage() {
   const steps = [
@@ -35,8 +36,8 @@ export default function HowItWorksPage() {
     },
     {
       num: 3,
-      title: 'Download Official Offer Letter',
-      desc: 'Instantly download your server-signed PDF offer letter featuring your name, selected track, start date, and deadline.',
+      title: 'Download Official Enrollment Letter',
+      desc: 'Instantly download your server-signed PDF enrollment letter featuring your name, selected track, start date, and deadline.',
       icon: <FileDown className="w-5 h-5 text-sky-600" />,
       color: 'bg-sky-50 border-sky-200',
     },
@@ -147,6 +148,9 @@ export default function HowItWorksPage() {
           </div>
         ))}
       </div>
+
+      {/* Review Rubric Section */}
+      <ReviewRubricSection />
 
       {/* Bottom CTA */}
       <div className="text-center pt-4">

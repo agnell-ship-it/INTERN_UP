@@ -26,6 +26,9 @@ import { DashboardProfileSection } from '@/components/DashboardProfileSection';
 import { DashboardStatusBanner } from '@/components/DashboardStatusBanner';
 import { DocumentActionButtons } from '@/components/DocumentActionButtons';
 import { LinkedInShareCertificate } from '@/components/LinkedInShareCertificate';
+import { DeadlineCountdownTimer } from '@/components/DeadlineCountdownTimer';
+import { MilestoneProgressTracker } from '@/components/MilestoneProgressTracker';
+import { EmailReminderSettings } from '@/components/EmailReminderSettings';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
@@ -109,6 +112,14 @@ export default async function DashboardPage() {
             isEligibleForCertificate={eligibility.isEligible}
           />
 
+          {/* Milestone 5-Step Pipeline Tracker */}
+          <MilestoneProgressTracker
+            completedTasksCount={completedCount}
+            isLinkedInApproved={isLinkedInApproved}
+            isPaymentApproved={payment?.status === 'approved'}
+            isCertificateIssued={certificate?.status === 'issued'}
+          />
+
           {/* Active Enrollment Horizon Card */}
           <div className="p-6 sm:p-8 bg-gradient-to-r from-slate-900 to-slate-800 text-white rounded-3xl shadow-md space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-700/80 pb-5">
@@ -131,12 +142,12 @@ export default async function DashboardPage() {
                 </p>
               </div>
 
-              {/* Offer Letter Action Buttons with Preview Modal */}
+              {/* Enrollment Letter Action Buttons with Preview Modal */}
               <div className="shrink-0">
                 <DocumentActionButtons
-                  title={`${enrollment.domain?.name || 'Internship'} - Offer Letter`}
-                  documentType="Offer Letter"
-                  pdfUrl={`/api/documents/offer-letter?enrollmentId=${enrollment.id}`}
+                  title={`${enrollment.domain?.name || 'Internship'} - Enrollment Letter`}
+                  documentType="Enrollment Letter"
+                  pdfUrl={`/api/documents/enrollment-letter?enrollmentId=${enrollment.id}`}
                 />
               </div>
             </div>
@@ -189,6 +200,17 @@ export default async function DashboardPage() {
                 />
               </div>
             </div>
+          </div>
+
+          {/* Real-time Deadline Countdown & Email Reminder Controls */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <DeadlineCountdownTimer
+              deadlineISO={enrollment.deadline}
+              enrollmentId={enrollment.id}
+            />
+            <EmailReminderSettings
+              studentEmail={user.email}
+            />
           </div>
 
           {/* Quick Action Cards (Payment & Certificate status overview) */}
