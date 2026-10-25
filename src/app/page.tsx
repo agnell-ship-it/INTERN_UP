@@ -29,20 +29,80 @@ import { SprintTrackFinder } from '@/components/SprintTrackFinder';
 import { CredentialVerifierSandbox } from '@/components/CredentialVerifierSandbox';
 import { DomainMatrixComparison } from '@/components/DomainMatrixComparison';
 
-// Domain icon mapper
-const domainIconMap: Record<string, React.ReactNode> = {
-  Globe: <Globe className="w-6 h-6 text-blue-600 dark:text-blue-400" />,
-  Code2: <Code2 className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />,
-  Coffee: <Coffee className="w-6 h-6 text-amber-600 dark:text-amber-400" />,
-  Cpu: <Cpu className="w-6 h-6 text-purple-600 dark:text-purple-400" />,
-  Binary: <Binary className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />,
-  LineChart: <LineChart className="w-6 h-6 text-teal-600 dark:text-teal-400" />,
-  BarChart3: <BarChart3 className="w-6 h-6 text-cyan-600 dark:text-cyan-400" />,
-  Smartphone: <Smartphone className="w-6 h-6 text-rose-600 dark:text-rose-400" />,
-  Palette: <Palette className="w-6 h-6 text-pink-600 dark:text-pink-400" />,
-  ShieldCheck: <ShieldCheck className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />,
-  Cloud: <Cloud className="w-6 h-6 text-sky-600 dark:text-sky-400" />,
-  Database: <Database className="w-6 h-6 text-violet-600 dark:text-violet-400" />,
+// Domain icon and accent configuration
+const domainColorConfig: Record<string, { bg: string; icon: React.ReactNode; hoverBorder: string; hoverText: string }> = {
+  Globe: {
+    bg: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20',
+    hoverBorder: 'hover:border-blue-500/70 hover:shadow-blue-500/10',
+    hoverText: 'group-hover:text-blue-600 dark:group-hover:text-blue-400',
+    icon: <Globe className="w-6 h-6" />,
+  },
+  Code2: {
+    bg: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20',
+    hoverBorder: 'hover:border-indigo-500/70 hover:shadow-indigo-500/10',
+    hoverText: 'group-hover:text-indigo-600 dark:group-hover:text-indigo-400',
+    icon: <Code2 className="w-6 h-6" />,
+  },
+  Coffee: {
+    bg: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20',
+    hoverBorder: 'hover:border-amber-500/70 hover:shadow-amber-500/10',
+    hoverText: 'group-hover:text-amber-600 dark:group-hover:text-amber-400',
+    icon: <Coffee className="w-6 h-6" />,
+  },
+  Cpu: {
+    bg: 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20',
+    hoverBorder: 'hover:border-purple-500/70 hover:shadow-purple-500/10',
+    hoverText: 'group-hover:text-purple-600 dark:group-hover:text-purple-400',
+    icon: <Cpu className="w-6 h-6" />,
+  },
+  Binary: {
+    bg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
+    hoverBorder: 'hover:border-emerald-500/70 hover:shadow-emerald-500/10',
+    hoverText: 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400',
+    icon: <Binary className="w-6 h-6" />,
+  },
+  LineChart: {
+    bg: 'bg-teal-500/10 text-teal-600 dark:text-teal-400 border border-teal-500/20',
+    hoverBorder: 'hover:border-teal-500/70 hover:shadow-teal-500/10',
+    hoverText: 'group-hover:text-teal-600 dark:group-hover:text-teal-400',
+    icon: <LineChart className="w-6 h-6" />,
+  },
+  BarChart3: {
+    bg: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20',
+    hoverBorder: 'hover:border-cyan-500/70 hover:shadow-cyan-500/10',
+    hoverText: 'group-hover:text-cyan-600 dark:group-hover:text-cyan-400',
+    icon: <BarChart3 className="w-6 h-6" />,
+  },
+  Smartphone: {
+    bg: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20',
+    hoverBorder: 'hover:border-rose-500/70 hover:shadow-rose-500/10',
+    hoverText: 'group-hover:text-rose-600 dark:group-hover:text-rose-400',
+    icon: <Smartphone className="w-6 h-6" />,
+  },
+  Palette: {
+    bg: 'bg-pink-500/10 text-pink-600 dark:text-pink-400 border border-pink-500/20',
+    hoverBorder: 'hover:border-pink-500/70 hover:shadow-pink-500/10',
+    hoverText: 'group-hover:text-pink-600 dark:group-hover:text-pink-400',
+    icon: <Palette className="w-6 h-6" />,
+  },
+  ShieldCheck: {
+    bg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20',
+    hoverBorder: 'hover:border-emerald-500/70 hover:shadow-emerald-500/10',
+    hoverText: 'group-hover:text-emerald-600 dark:group-hover:text-emerald-400',
+    icon: <ShieldCheck className="w-6 h-6" />,
+  },
+  Cloud: {
+    bg: 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20',
+    hoverBorder: 'hover:border-sky-500/70 hover:shadow-sky-500/10',
+    hoverText: 'group-hover:text-sky-600 dark:group-hover:text-sky-400',
+    icon: <Cloud className="w-6 h-6" />,
+  },
+  Database: {
+    bg: 'bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20',
+    hoverBorder: 'hover:border-violet-500/70 hover:shadow-violet-500/10',
+    hoverText: 'group-hover:text-violet-600 dark:group-hover:text-violet-400',
+    icon: <Database className="w-6 h-6" />,
+  },
 };
 
 export default function HomePage() {
@@ -50,9 +110,12 @@ export default function HomePage() {
     <div className="flex flex-col space-y-16 sm:space-y-24 pb-20 transition-colors">
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-12 sm:pt-20 pb-16 mesh-gradient-hero border-b border-slate-200/70 dark:border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Atmospheric ambient lighting glow */}
+        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[650px] h-[300px] bg-gradient-to-r from-blue-500/20 via-indigo-500/15 to-purple-500/20 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center max-w-3xl mx-auto space-y-6">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-100/90 dark:bg-blue-950/70 border border-blue-200 dark:border-blue-800 text-blue-800 dark:text-blue-300 text-xs font-bold tracking-wide shadow-2xs">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-violet-500/10 dark:from-blue-950/80 dark:to-indigo-950/80 border border-blue-400/40 dark:border-blue-700/60 text-blue-700 dark:text-blue-300 text-xs font-bold tracking-wide shadow-xs">
               <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse" />
               <span>7-CALENDAR-DAY TASK-BASED SPRINT TRACK</span>
             </div>
@@ -81,21 +144,21 @@ export default function HomePage() {
               </Link>
             </div>
 
-            {/* Quick trust metrics */}
+            {/* Quick trust metrics with colored top accents */}
             <div className="pt-8 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl mx-auto text-left border-t border-slate-200/80 dark:border-slate-800">
-              <div className="p-4 bg-white/80 dark:bg-slate-900/80 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+              <div className="p-4 bg-white/90 dark:bg-slate-900/90 rounded-2xl border border-slate-200/80 dark:border-slate-800 border-t-2 border-t-blue-500 shadow-xs hover:shadow-md transition-shadow">
                 <div className="text-2xl font-extrabold text-slate-900 dark:text-white">13</div>
                 <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">CS Engineering Domains</div>
               </div>
-              <div className="p-4 bg-white/80 dark:bg-slate-900/80 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+              <div className="p-4 bg-white/90 dark:bg-slate-900/90 rounded-2xl border border-slate-200/80 dark:border-slate-800 border-t-2 border-t-indigo-500 shadow-xs hover:shadow-md transition-shadow">
                 <div className="text-2xl font-extrabold text-slate-900 dark:text-white">5 Tasks</div>
                 <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Curriculum Milestones</div>
               </div>
-              <div className="p-4 bg-white/80 dark:bg-slate-900/80 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+              <div className="p-4 bg-white/90 dark:bg-slate-900/90 rounded-2xl border border-slate-200/80 dark:border-slate-800 border-t-2 border-t-violet-500 shadow-xs hover:shadow-md transition-shadow">
                 <div className="text-2xl font-extrabold text-slate-900 dark:text-white">7 Days</div>
                 <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Strict Sprint Horizon</div>
               </div>
-              <div className="p-4 bg-white/80 dark:bg-slate-900/80 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs">
+              <div className="p-4 bg-white/90 dark:bg-slate-900/90 rounded-2xl border border-slate-200/80 dark:border-slate-800 border-t-2 border-t-emerald-500 shadow-xs hover:shadow-md transition-shadow">
                 <div className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">₹100</div>
                 <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Direct UPI Program Fee</div>
               </div>
@@ -112,6 +175,10 @@ export default function HomePage() {
       {/* 4-Step Journey */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60 text-xs font-semibold">
+            <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+            <span>PROGRESSION BLUEPRINT</span>
+          </div>
           <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
             How The Program Operates
           </h2>
@@ -121,8 +188,8 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-3 relative hover:border-blue-400 transition-all">
-            <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 font-bold flex items-center justify-center text-sm">
+          <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-3 relative hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-cyan-500 text-white font-bold flex items-center justify-center text-sm shadow-sm shadow-blue-500/25">
               01
             </div>
             <h3 className="font-bold text-slate-900 dark:text-white text-base">Select Domain &amp; Enroll</h3>
@@ -131,8 +198,8 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-3 relative hover:border-indigo-400 transition-all">
-            <div className="w-8 h-8 rounded-lg bg-indigo-50 dark:bg-indigo-950/60 text-indigo-700 dark:text-indigo-300 font-bold flex items-center justify-center text-sm">
+          <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-3 relative hover:border-indigo-400 dark:hover:border-indigo-500 hover:shadow-md transition-all">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-600 to-blue-500 text-white font-bold flex items-center justify-center text-sm shadow-sm shadow-indigo-500/25">
               02
             </div>
             <h3 className="font-bold text-slate-900 dark:text-white text-base">Announce on LinkedIn</h3>
@@ -141,8 +208,8 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-3 relative hover:border-purple-400 transition-all">
-            <div className="w-8 h-8 rounded-lg bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 font-bold flex items-center justify-center text-sm">
+          <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-3 relative hover:border-purple-400 dark:hover:border-purple-500 hover:shadow-md transition-all">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-purple-600 to-violet-500 text-white font-bold flex items-center justify-center text-sm shadow-sm shadow-purple-500/25">
               03
             </div>
             <h3 className="font-bold text-slate-900 dark:text-white text-base">Complete 5 Tasks</h3>
@@ -151,8 +218,8 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-3 relative hover:border-emerald-400 transition-all">
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 font-bold flex items-center justify-center text-sm">
+          <div className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs space-y-3 relative hover:border-emerald-400 dark:hover:border-emerald-500 hover:shadow-md transition-all">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold flex items-center justify-center text-sm shadow-sm shadow-emerald-500/25">
               04
             </div>
             <h3 className="font-bold text-slate-900 dark:text-white text-base">Pay ₹100 & Get Certificate</h3>
@@ -191,37 +258,46 @@ export default function HomePage() {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {INITIAL_DOMAINS.map((domain) => (
-            <div
-              key={domain.slug}
-              className="p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:shadow-lg hover:border-blue-400 dark:hover:border-blue-500 transition-all flex flex-col justify-between group"
-            >
-              <div className="space-y-3">
-                <div className="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-100 dark:border-slate-700/80 flex items-center justify-center group-hover:scale-105 transition-transform">
-                  {domainIconMap[domain.icon_name] || <Code2 className="w-6 h-6 text-blue-600 dark:text-blue-400" />}
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                    {domain.name}
-                  </h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
-                    {domain.description}
-                  </p>
-                </div>
-              </div>
+          {INITIAL_DOMAINS.map((domain) => {
+            const config = domainColorConfig[domain.icon_name] || {
+              bg: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20',
+              hoverBorder: 'hover:border-blue-500/70 hover:shadow-blue-500/10',
+              hoverText: 'group-hover:text-blue-600 dark:group-hover:text-blue-400',
+              icon: <Code2 className="w-6 h-6" />,
+            };
 
-              <div className="pt-5 mt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-                <span className="font-semibold text-slate-700 dark:text-slate-300">5 Structured Tasks</span>
-                <Link
-                  href={`/register`}
-                  className="font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 flex items-center gap-1"
-                >
-                  <span>Enroll</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </Link>
+            return (
+              <div
+                key={domain.slug}
+                className={`p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:shadow-lg ${config.hoverBorder} transition-all flex flex-col justify-between group`}
+              >
+                <div className="space-y-3">
+                  <div className={`w-12 h-12 rounded-xl ${config.bg} flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs`}>
+                    {config.icon}
+                  </div>
+                  <div>
+                    <h3 className={`text-lg font-bold text-slate-900 dark:text-white ${config.hoverText} transition-colors`}>
+                      {domain.name}
+                    </h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
+                      {domain.description}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="pt-5 mt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">5 Structured Tasks</span>
+                  <Link
+                    href={`/register`}
+                    className="font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1"
+                  >
+                    <span>Enroll</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </Link>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </section>
 

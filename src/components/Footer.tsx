@@ -5,17 +5,20 @@ import { COMPANY_INFO, INITIAL_DOMAINS } from '@/lib/constants';
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="bg-slate-900 text-slate-300 border-t border-slate-800">
+    <footer className="bg-slate-900 text-slate-300 border-t border-slate-800 relative">
+      {/* Top radiant multi-color hairline border */}
+      <div className="w-full h-[3px] bg-gradient-to-r from-blue-600 via-indigo-600 via-purple-600 to-emerald-500" />
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12">
           {/* Brand & Mission */}
           <div className="lg:col-span-2 space-y-4">
             <Link href="/" className="flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white">
+              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-md shadow-indigo-500/20">
                 <GraduationCap className="w-5 h-5" />
               </div>
               <span className="text-xl font-bold tracking-tight text-white">
-                INTERN<span className="text-blue-500">-UP</span>
+                INTERN<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">-UP</span>
               </span>
             </Link>
 
