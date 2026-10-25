@@ -125,56 +125,56 @@ export const TaskSubmissionItem: React.FC<TaskSubmissionItemProps> = ({
     <div
       className={`rounded-2xl border transition-all ${
         isSubmitted
-          ? 'bg-white border-emerald-200/90 shadow-2xs'
-          : 'bg-white border-slate-200/90 shadow-2xs'
+          ? 'bg-white dark:bg-slate-900/90 border-emerald-200/90 dark:border-emerald-800/70 shadow-2xs'
+          : 'bg-white dark:bg-slate-900/90 border-slate-200/90 dark:border-slate-800 shadow-2xs'
       }`}
     >
       {/* Header bar */}
       <div
         onClick={() => setExpanded(!expanded)}
-        className="p-4 sm:p-5 flex items-center justify-between cursor-pointer select-none hover:bg-slate-50/50 rounded-2xl transition-colors"
+        className="p-4 sm:p-5 flex items-center justify-between cursor-pointer select-none hover:bg-slate-50/50 dark:hover:bg-slate-800/40 rounded-2xl transition-colors"
       >
         <div className="flex items-center gap-3">
           <div
             className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs shrink-0 ${
               isSubmitted
-                ? 'bg-emerald-100 text-emerald-800'
-                : 'bg-blue-50 text-blue-700'
+                ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
+                : 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300'
             }`}
           >
             {task.display_order}
           </div>
           <div>
-            <h4 className="text-sm font-bold text-slate-900">{task.title}</h4>
-            <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
+            <h4 className="text-sm font-bold text-slate-900 dark:text-slate-100">{task.title}</h4>
+            <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
               <span>Milestone {task.display_order} of 5</span>
               <span>&bull;</span>
               {isSubmitted ? (
                 submission?.review_status === 'approved' ? (
-                  <span className="text-emerald-700 font-semibold flex items-center gap-1">
+                  <span className="text-emerald-700 dark:text-emerald-400 font-semibold flex items-center gap-1">
                     <CheckCircle2 className="w-3.5 h-3.5" />
                     <span>Approved by Mentor</span>
                   </span>
                 ) : submission?.review_status === 'changes_requested' ? (
-                  <span className="text-amber-700 font-semibold flex items-center gap-1">
+                  <span className="text-amber-700 dark:text-amber-400 font-semibold flex items-center gap-1">
                     <AlertCircle className="w-3.5 h-3.5" />
                     <span>Changes Requested</span>
                   </span>
                 ) : (
-                  <span className="text-blue-700 font-semibold flex items-center gap-1">
+                  <span className="text-blue-700 dark:text-blue-400 font-semibold flex items-center gap-1">
                     <Clock className="w-3.5 h-3.5" />
                     <span>Submitted &bull; Under Review</span>
                   </span>
                 )
               ) : (
-                <span className="text-amber-600 font-medium">Pending Submission</span>
+                <span className="text-amber-600 dark:text-amber-400 font-medium">Pending Submission</span>
               )}
             </div>
           </div>
         </div>
 
         <button
-          className="p-1 text-slate-400 hover:text-slate-600 rounded-lg"
+          className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-lg"
           aria-label={expanded ? 'Collapse task' : 'Expand task'}
         >
           {expanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
@@ -183,39 +183,39 @@ export const TaskSubmissionItem: React.FC<TaskSubmissionItemProps> = ({
 
       {/* Expanded details & submission form */}
       {expanded && (
-        <div className="px-4 pb-5 sm:px-5 sm:pb-6 border-t border-slate-100 pt-4 space-y-4 text-xs">
+        <div className="px-4 pb-5 sm:px-5 sm:pb-6 border-t border-slate-100 dark:border-slate-800 pt-4 space-y-4 text-xs">
           {/* Instructions */}
           <div className="space-y-1">
-            <span className="font-bold text-slate-800 uppercase tracking-wider text-[11px]">
+            <span className="font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider text-[11px]">
               Task Instructions
             </span>
-            <p className="text-slate-600 leading-relaxed text-xs">{task.instructions}</p>
+            <p className="text-slate-600 dark:text-slate-300 leading-relaxed text-xs">{task.instructions}</p>
           </div>
 
           {/* Objective & Expected deliverable */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1">
-              <span className="font-semibold text-slate-700 text-[11px]">
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700/60 space-y-1">
+              <span className="font-semibold text-slate-700 dark:text-slate-200 text-[11px]">
                 Learning Objective
               </span>
-              <p className="text-slate-500 text-[11px] leading-relaxed">
+              <p className="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed">
                 {task.learning_objective}
               </p>
             </div>
 
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 space-y-1">
-              <span className="font-semibold text-slate-700 text-[11px]">
+            <div className="p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700/60 space-y-1">
+              <span className="font-semibold text-slate-700 dark:text-slate-200 text-[11px]">
                 Expected Deliverable
               </span>
-              <p className="text-slate-500 text-[11px] leading-relaxed">
+              <p className="text-slate-500 dark:text-slate-400 text-[11px] leading-relaxed">
                 {task.expected_deliverable}
               </p>
             </div>
           </div>
 
           {task.suggested_tools && (
-            <div className="text-[11px] text-slate-500">
-              <span className="font-semibold text-slate-700">Suggested Tools: </span>
+            <div className="text-[11px] text-slate-500 dark:text-slate-400">
+              <span className="font-semibold text-slate-700 dark:text-slate-300">Suggested Tools: </span>
               <span>{task.suggested_tools}</span>
             </div>
           )}
@@ -312,7 +312,7 @@ export const TaskSubmissionItem: React.FC<TaskSubmissionItemProps> = ({
                       if (repoStatus) setRepoStatus(null);
                     }}
                     placeholder="https://github.com/username/repository-name"
-                    className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-slate-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                    className="w-full pl-9 pr-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
                   />
                 </div>
 
@@ -320,23 +320,23 @@ export const TaskSubmissionItem: React.FC<TaskSubmissionItemProps> = ({
                 {repoStatus && repoStatus.checked && (
                   <div className="mt-2">
                     {repoStatus.valid ? (
-                      <div className="p-2.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] flex items-center justify-between">
+                      <div className="p-2.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-[11px] flex items-center justify-between">
                         <div className="flex items-center gap-1.5">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                           <span>
                             Verified public repository:{' '}
                             <strong className="font-mono">{repoStatus.repoName}</strong>
                           </span>
                         </div>
                         {repoStatus.commitCount !== undefined && (
-                          <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                          <span className="text-[10px] font-bold bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-200 px-2 py-0.5 rounded-full">
                             {repoStatus.commitCount} commits detected
                           </span>
                         )}
                       </div>
                     ) : (
-                      <div className="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-[11px] flex items-center gap-1.5">
-                        <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                      <div className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-300 text-[11px] flex items-center gap-1.5">
+                        <AlertCircle className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
                         <span>{repoStatus.message || 'Repository could not be verified on GitHub.'}</span>
                       </div>
                     )}
@@ -347,7 +347,7 @@ export const TaskSubmissionItem: React.FC<TaskSubmissionItemProps> = ({
               <div>
                 <label
                   htmlFor={`notes_${task.id}`}
-                  className="block text-[11px] font-semibold uppercase tracking-wider text-slate-700 mb-1"
+                  className="block text-[11px] font-semibold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1"
                 >
                   Optional Notes / Live Demo URL
                 </label>
@@ -357,7 +357,7 @@ export const TaskSubmissionItem: React.FC<TaskSubmissionItemProps> = ({
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="e.g. Hosted live at Vercel / GitHub Pages..."
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
+                  className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:border-blue-600 focus:ring-1 focus:ring-blue-600"
                 />
               </div>
 
