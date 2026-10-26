@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
       degree: degree?.trim() || '',
       graduation_year: graduation_year?.trim() || '',
       role: 'student',
-      email_verified: isOwner, // Owner account auto-verified; students verify email via code/link
+      email_verified: true, // Auto-verified for seamless onboarding without verification codes
     });
 
     // Save auth credential
@@ -123,13 +123,13 @@ export async function POST(req: NextRequest) {
         email: profile.email,
         full_name: profile.full_name,
         role: profile.role,
-        email_verified: profile.email_verified,
+        email_verified: true,
       },
       emailVerification: {
-        required: !profile.email_verified,
+        required: false,
         code: verificationCode,
         token: verificationToken,
-        message: 'A 6-digit verification code has been dispatched to your email address.',
+        message: 'Registration successful.',
       },
     });
 

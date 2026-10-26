@@ -15,6 +15,14 @@ interface ActivityItem {
 
 const ACTIVITIES: ActivityItem[] = [
   {
+    id: 'urgency-1',
+    type: 'enrollment',
+    text: '🔥 Limited Slots: 42/50 seats filled for this week\'s sprint cohort — register fast to secure your seat!',
+    badge: '8 Seats Left',
+    timeAgo: 'Just now',
+    link: '/register',
+  },
+  {
     id: '1',
     type: 'certificate',
     text: 'Priya Patel claimed verified Certificate for Web Development',

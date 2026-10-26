@@ -3,9 +3,8 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { GraduationCap, Lock, Mail, User, Phone, School, BookOpen, ArrowRight, AlertCircle, ShieldCheck } from 'lucide-react';
+import { GraduationCap, Lock, Mail, User, Phone, School, BookOpen, ArrowRight, AlertCircle, ShieldCheck, Flame, Clock, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
-import { CaptchaWidget } from '@/components/CaptchaWidget';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -18,10 +17,22 @@ export default function RegisterPage() {
     degree: '',
     graduation_year: '',
   });
-  const [captchaToken, setCaptchaToken] = useState('');
-  const [captchaAnswer, setCaptchaAnswer] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [reservedSeconds, setReservedSeconds] = useState(882); // 14m 42s
+
+  React.useEffect(() => {
+    const timer = setInterval(() => {
+      setReservedSeconds((prev) => (prev > 0 ? prev - 1 : 900));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const formatTimer = (secs: number) => {
+    const mins = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${String(mins).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData((prev) => ({ ...prev, [e.target.name]: e.target.value }));
@@ -42,24 +53,13 @@ export default function RegisterPage() {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          captchaToken,
-          captchaAnswer,
-        }),
+        body: JSON.stringify(formData),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
         throw new Error(data.error || 'Registration failed. Please try again.');
-      }
-
-      if (data.emailVerification?.required) {
-        // Redirect to email verification with code
-        router.push(`/verify-email?code=${data.emailVerification.code || ''}`);
-        router.refresh();
-        return;
       }
 
       const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
@@ -104,6 +104,30 @@ export default function RegisterPage() {
           <p className="text-xs sm:text-sm text-slate-500">
             Register for INTERN-UP and start your 7-calendar-day task internship
           </p>
+        </div>
+
+        {/* Limited Batch Scarcity & Reservation Countdown Card */}
+        <div className="p-4 rounded-xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-red-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-amber-500 text-slate-950 shadow-2xs">
+              <Flame className="w-3 h-3 fill-slate-950" />
+              <span>Limited Batch: 8 Slots Remaining</span>
+            </span>
+            <div className="flex items-center gap-1 text-xs font-mono font-bold text-amber-800 dark:text-amber-300">
+              <Clock className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+              <span>Held: {formatTimer(reservedSeconds)}</span>
+            </div>
+          </div>
+          <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+            Your sprint seat is held temporarily. Complete registration below to lock your spot before mentor batch review capacity is capped at 50 students.
+          </p>
+          <div className="w-full bg-slate-200 dark:bg-slate-700 h-1.5 rounded-full overflow-hidden">
+            <div className="bg-gradient-to-r from-amber-500 to-orange-500 h-full w-[84%] rounded-full" />
+          </div>
+          <div className="flex items-center justify-between text-[10px] text-slate-500 dark:text-slate-400 font-medium">
+            <span>42/50 Enrolled in this batch</span>
+            <span className="text-amber-700 dark:text-amber-400 font-bold">84% Capacity</span>
+          </div>
         </div>
 
         {error && (
@@ -254,15 +278,6 @@ export default function RegisterPage() {
             </div>
           </div>
 
-          {/* Anti-bot CAPTCHA verification */}
-          <CaptchaWidget
-            onChallengeChange={(token, answer) => {
-              setCaptchaToken(token);
-              setCaptchaAnswer(answer);
-            }}
-            disabled={loading}
-          />
-
           <Button
             type="submit"
             isLoading={loading}
@@ -271,9 +286,28 @@ export default function RegisterPage() {
           >
             Create Account & Continue
           </Button>
+
+          <div className="grid grid-cols-2 gap-2 pt-2 text-[11px] text-slate-500 dark:text-slate-400">
+            <div className="flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+              <span>Instant Letter PDF</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Flame className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+              <span>Limited Batch Size</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+              <span>7-Day Structured Sprint</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-purple-500 shrink-0" />
+              <span>No Upfront Payment</span>
+            </div>
+          </div>
         </form>
 
-        <div className="pt-4 border-t border-slate-100 text-center text-xs text-slate-500">
+        <div className="pt-4 border-t border-slate-100 dark:border-slate-800 text-center text-xs text-slate-500">
           Already registered?{' '}
           <Link href="/login" className="text-blue-600 hover:text-blue-700 font-semibold">
             Sign In Here

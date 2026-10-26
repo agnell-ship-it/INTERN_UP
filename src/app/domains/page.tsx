@@ -23,6 +23,7 @@ import { db } from '@/lib/db';
 import { getCurrentUser } from '@/lib/auth';
 import { DomainCardPublic } from '@/components/DomainCardPublic';
 import { ReviewRubricSection } from '@/components/ReviewRubricSection';
+import { CohortUrgencyBanner } from '@/components/CohortUrgencyBanner';
 
 const iconMap: Record<string, React.ReactNode> = {
   Globe: <Globe className="w-6 h-6 text-blue-600" />,
@@ -72,6 +73,9 @@ export default async function DomainsPage() {
           expected completion times, and deliverable standards.
         </p>
       </div>
+
+      {/* Cohort Scarcity Alert */}
+      <CohortUrgencyBanner />
 
       {activeEnrollment && (
         <div className="p-4 rounded-xl bg-blue-50 border border-blue-200 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs sm:text-sm text-blue-900">

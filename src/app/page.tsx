@@ -28,6 +28,24 @@ import { Button } from '@/components/ui/Button';
 import { SprintTrackFinder } from '@/components/SprintTrackFinder';
 import { CredentialVerifierSandbox } from '@/components/CredentialVerifierSandbox';
 import { DomainMatrixComparison } from '@/components/DomainMatrixComparison';
+import { CohortUrgencyBanner } from '@/components/CohortUrgencyBanner';
+
+// Domain scarcity mapping for limited slots marketing
+const domainScarcityMap: Record<string, { badge: string; color: string }> = {
+  'web-development': { badge: '🔥 3 Slots Left', color: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20' },
+  'python-programming': { badge: '🔥 4 Slots Left', color: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20' },
+  'full-stack-development': { badge: '🔥 2 Slots Left', color: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20' },
+  'machine-learning': { badge: '🔥 3 Slots Left', color: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20' },
+  'data-science': { badge: '🔥 4 Slots Left', color: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20' },
+  'cyber-security': { badge: '🔥 2 Slots Left', color: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20' },
+  'cloud-computing': { badge: '⚡ 86% Filled', color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' },
+  'android-development': { badge: '⚡ 82% Filled', color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' },
+  'java-programming': { badge: '🔥 4 Slots Left', color: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20' },
+  'cpp-programming': { badge: '⚡ 80% Filled', color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' },
+  'ui-ux-design': { badge: '🔥 3 Slots Left', color: 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20' },
+  'data-analytics': { badge: '⚡ 84% Filled', color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' },
+  'database-management': { badge: '⚡ 78% Filled', color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' },
+};
 
 // Domain icon and accent configuration
 const domainColorConfig: Record<string, { bg: string; icon: React.ReactNode; hoverBorder: string; hoverText: string }> = {
@@ -130,6 +148,11 @@ export default function HomePage() {
               submit verifiable GitHub repositories, and earn digitally verifiable credentials.
             </p>
 
+            {/* Scarcity / Urgency Chip */}
+            <div className="pt-1 flex justify-center">
+              <CohortUrgencyBanner compact={true} />
+            </div>
+
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
               <Link href="/register">
@@ -165,6 +188,11 @@ export default function HomePage() {
             </div>
           </div>
         </div>
+      </section>
+
+      {/* Cohort Scarcity & Countdown Alert Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 sm:-mt-10 relative z-20">
+        <CohortUrgencyBanner />
       </section>
 
       {/* Interactive Sprint Track Finder */}
@@ -243,12 +271,20 @@ export default function HomePage() {
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
           <div>
-            <div className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1">
-              Curriculum Tracks
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+                Curriculum Tracks
+              </span>
+              <span className="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-extrabold uppercase border border-rose-500/20 animate-pulse">
+                Capped at 50 seats / track
+              </span>
             </div>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
               13 Technical Internship Domains
             </h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              Limited slots available per cohort to guarantee individual mentor code evaluation and feedback.
+            </p>
           </div>
           <Link href="/domains">
             <Button variant="outline" size="sm">
@@ -265,6 +301,10 @@ export default function HomePage() {
               hoverText: 'group-hover:text-blue-600 dark:group-hover:text-blue-400',
               icon: <Code2 className="w-6 h-6" />,
             };
+            const scarcity = domainScarcityMap[domain.slug] || {
+              badge: '⚡ Fast Filling',
+              color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+            };
 
             return (
               <div
@@ -272,8 +312,13 @@ export default function HomePage() {
                 className={`p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:shadow-lg ${config.hoverBorder} transition-all flex flex-col justify-between group`}
               >
                 <div className="space-y-3">
-                  <div className={`w-12 h-12 rounded-xl ${config.bg} flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs`}>
-                    {config.icon}
+                  <div className="flex items-center justify-between">
+                    <div className={`w-12 h-12 rounded-xl ${config.bg} flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs`}>
+                      {config.icon}
+                    </div>
+                    <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${scarcity.color}`}>
+                      {scarcity.badge}
+                    </span>
                   </div>
                   <div>
                     <h3 className={`text-lg font-bold text-slate-900 dark:text-white ${config.hoverText} transition-colors`}>

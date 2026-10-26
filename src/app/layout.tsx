@@ -4,6 +4,8 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { getCurrentUser } from '@/lib/auth';
 
+import { SocialProofToast } from '@/components/SocialProofToast';
+
 const siteUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://intern-up.vercel.app';
 
 export const metadata: Metadata = {
@@ -78,6 +80,7 @@ export default async function RootLayout({
           {children}
         </main>
         <Footer />
+        <SocialProofToast />
       </body>
     </html>
   );
