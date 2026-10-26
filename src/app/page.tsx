@@ -129,7 +129,7 @@ const domainColorConfig: Record<string, { bg: string; icon: React.ReactNode; hov
 
 export default function HomePage() {
   return (
-    <div className="flex flex-col space-y-16 sm:space-y-24 pb-20 transition-colors">
+    <div className="flex flex-col pb-20 transition-colors space-y-10 sm:space-y-14">
       {/* 1. High-Impact Royal Blue Hero Section (Thiranex-style) */}
       <ThiranexHero />
 
