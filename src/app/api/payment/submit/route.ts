@@ -12,7 +12,15 @@ export async function POST(req: NextRequest) {
 
     const { enrollment_id, upi_reference, payment_date, screenshot_url } = await req.json();
 
-    if (!enrollment_id || !upi_reference || !payment_date) {
+    let targetEnrollmentId = enrollment_id;
+    if (!targetEnrollmentId) {
+      const active = await db.getActiveEnrollmentByStudentId(user.id);
+      if (active) {
+        targetEnrollmentId = active.id;
+      }
+    }
+
+    if (!targetEnrollmentId || !upi_reference || !payment_date) {
       return NextResponse.json(
         { error: 'Enrollment ID, UTR reference number, and payment date are required.' },
         { status: 400 }
@@ -39,7 +47,7 @@ export async function POST(req: NextRequest) {
     }
 
     // Payment unlocks once all 5 tasks are submitted
-    const taskSubmissions = await db.getTaskSubmissionsByEnrollmentId(enrollment_id);
+    const taskSubmissions = await db.getTaskSubmissionsByEnrollmentId(targetEnrollmentId);
     const validTasksCount = taskSubmissions.filter(
       (t) => t.github_url && t.github_url.trim().length > 0
     ).length;
@@ -54,7 +62,7 @@ export async function POST(req: NextRequest) {
     }
 
     const payment = await db.submitPayment(
-      enrollment_id,
+      targetEnrollmentId,
       user.id,
       upi_reference,
       payment_date,

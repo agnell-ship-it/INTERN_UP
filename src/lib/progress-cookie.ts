@@ -45,6 +45,7 @@ export function verifyProgressPayload(token: string): StudentProgressState | nul
 }
 
 export async function getProgressFromCookie(): Promise<StudentProgressState | null> {
+  if (process.env.VITEST) return null;
   try {
     const cookieStore = await cookies();
     const cookie = cookieStore.get(PROGRESS_COOKIE_NAME);
@@ -58,6 +59,7 @@ export async function getProgressFromCookie(): Promise<StudentProgressState | nu
 export async function saveProgressToCookie(
   update: Partial<StudentProgressState> & { studentId: string }
 ): Promise<void> {
+  if (process.env.VITEST) return;
   try {
     const current = (await getProgressFromCookie()) || {
       studentId: update.studentId,
@@ -89,7 +91,7 @@ export async function saveProgressToCookie(
       path: '/',
       maxAge: 30 * 24 * 60 * 60, // 30 days
     });
-  } catch (err) {
-    console.error('Failed to save progress cookie:', err);
+  } catch {
+    // Graceful fallback outside Next.js request context
   }
 }

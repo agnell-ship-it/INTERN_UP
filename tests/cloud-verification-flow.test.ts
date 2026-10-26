@@ -81,4 +81,33 @@ describe('End-to-End Verification and Payment Flow', () => {
     expect(retrievedCert).toBeDefined();
     expect(retrievedCert?.student_name).toBe(student.full_name);
   });
+
+  it('self-heals and accepts task submission even if container restarted and enrollment was missing from memory', async () => {
+    const studentId = `usr_cold_${Date.now()}`;
+    await db.createProfile({
+      id: studentId,
+      email: `${studentId}@example.com`,
+      full_name: 'Cold Start Student',
+      role: 'student',
+      email_verified: true,
+    });
+
+    // Student submits task without a pre-existing enrollment in state.enrollments
+    const submission = await db.submitTask(
+      'enr_missing_from_memory',
+      'task_web-development_1',
+      studentId,
+      'https://github.com/student/self-heal-task-1'
+    );
+
+    expect(submission).toBeDefined();
+    expect(submission.github_url).toBe('https://github.com/student/self-heal-task-1');
+    expect(submission.enrollment_id).toBeDefined();
+
+    // Verify enrollment was self-healed and recorded
+    const enrollment = await db.getEnrollmentById(submission.enrollment_id);
+    expect(enrollment).toBeDefined();
+    expect(enrollment?.student_id).toBe(studentId);
+    expect(enrollment?.status).toBe('active');
+  });
 });

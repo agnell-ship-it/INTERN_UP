@@ -14,9 +14,17 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { enrollment_id, task_id, github_url, notes } = body;
 
-    if (!enrollment_id || !task_id || !github_url) {
+    let targetEnrollmentId = enrollment_id;
+    if (!targetEnrollmentId) {
+      const active = await db.getActiveEnrollmentByStudentId(user.id);
+      if (active) {
+        targetEnrollmentId = active.id;
+      }
+    }
+
+    if (!task_id || !github_url) {
       return NextResponse.json(
-        { error: 'Enrollment ID, Task ID, and GitHub URL are required.' },
+        { error: 'Task ID and GitHub URL are required.' },
         { status: 400 }
       );
     }
@@ -34,7 +42,7 @@ export async function POST(req: NextRequest) {
     }
 
     const submission = await db.submitTask(
-      enrollment_id,
+      targetEnrollmentId || '',
       task_id,
       user.id,
       github_url,
@@ -43,7 +51,7 @@ export async function POST(req: NextRequest) {
 
     try {
       const { saveProgressToCookie } = await import('@/lib/progress-cookie');
-      const allSubmissions = await db.getTaskSubmissionsByEnrollmentId(enrollment_id);
+      const allSubmissions = await db.getTaskSubmissionsByEnrollmentId(submission.enrollment_id);
       await saveProgressToCookie({
         studentId: user.id,
         taskSubmissions: allSubmissions,
