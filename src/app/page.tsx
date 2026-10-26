@@ -177,9 +177,9 @@ export default function HomePage() {
             <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-indigo-600 to-blue-500 text-white font-bold flex items-center justify-center text-sm shadow-sm shadow-indigo-500/25">
               02
             </div>
-            <h3 className="font-bold text-slate-900 dark:text-white text-base">Announce on LinkedIn</h3>
+            <h3 className="font-bold text-slate-900 dark:text-white text-base">Pay ₹100 &amp; Get Certified</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-              Share your participation announcement on LinkedIn and submit your public URL for administrative review.
+              After your 5 tasks, pay ₹100 by UPI and enter your transaction ID. The administrator verifies it and awards your certificate.
             </p>
           </div>
 

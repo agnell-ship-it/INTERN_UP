@@ -33,10 +33,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Payment record not found.' }, { status: 404 });
     }
 
+    // When payment is approved, automatically award & issue the verified certificate
+    let issuedCert = null;
+    if (status === 'approved') {
+      try {
+        const result = await db.issueCertificate(updated.enrollment_id, admin.id);
+        issuedCert = result.certificate;
+      } catch (issueErr) {
+        console.error('Auto certificate issuance note:', issueErr);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       payment: updated,
-      message: `Payment has been successfully marked as ${status}.`,
+      certificate: issuedCert,
+      message: `Payment has been successfully marked as ${status}.${issuedCert ? ' Completion certificate has been awarded.' : ''}`,
     });
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : 'Unauthorized or review failed.';

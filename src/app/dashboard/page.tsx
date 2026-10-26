@@ -21,7 +21,6 @@ import { db } from '@/lib/db';
 import { calculateCertificateEligibility } from '@/lib/eligibility';
 import { formatISTDate, getEnrollmentTimeStatus } from '@/lib/date-utils';
 import { TaskSubmissionItem } from '@/components/TaskSubmissionItem';
-import { LinkedInSubmissionSection } from '@/components/LinkedInSubmissionSection';
 import { DashboardProfileSection } from '@/components/DashboardProfileSection';
 import { DashboardStatusBanner } from '@/components/DashboardStatusBanner';
 import { DocumentActionButtons } from '@/components/DocumentActionButtons';
@@ -42,14 +41,12 @@ export default async function DashboardPage() {
 
   let tasks: Awaited<ReturnType<typeof db.getTasksByDomainId>> = [];
   let taskSubmissions: Awaited<ReturnType<typeof db.getTaskSubmissionsByEnrollmentId>> = [];
-  let linkedInSubmission: Awaited<ReturnType<typeof db.getLinkedInSubmissionByEnrollmentId>> = null;
   let payment: Awaited<ReturnType<typeof db.getPaymentByEnrollmentId>> = null;
   let certificate: Awaited<ReturnType<typeof db.getCertificateByEnrollmentId>> = null;
 
   if (enrollment) {
     tasks = await db.getTasksByDomainId(enrollment.domain_id);
     taskSubmissions = await db.getTaskSubmissionsByEnrollmentId(enrollment.id);
-    linkedInSubmission = await db.getLinkedInSubmissionByEnrollmentId(enrollment.id);
     payment = await db.getPaymentByEnrollmentId(enrollment.id);
     certificate = await db.getCertificateByEnrollmentId(enrollment.id);
   }
@@ -57,7 +54,6 @@ export default async function DashboardPage() {
   // Calculate certificate eligibility strictly on the server
   const eligibility = calculateCertificateEligibility({
     enrollment,
-    linkedInSubmission,
     taskSubmissions,
     payment,
     isRevoked: certificate?.status === 'revoked',
@@ -68,8 +64,8 @@ export default async function DashboardPage() {
   const progressPercent = Math.min(100, Math.round((completedCount / 5) * 100));
 
   const isTasksComplete = completedCount >= 5;
-  const isLinkedInApproved = linkedInSubmission?.status === 'approved';
-  const isReadyForPayment = isTasksComplete && isLinkedInApproved;
+  // Payment unlocks as soon as all 5 tasks are submitted (no LinkedIn step)
+  const isReadyForPayment = isTasksComplete;
 
   return (
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-8">
@@ -105,7 +101,6 @@ export default async function DashboardPage() {
           {/* Dynamic Live Status Alert Banner */}
           <DashboardStatusBanner
             enrollment={enrollment}
-            linkedInSubmission={linkedInSubmission}
             payment={payment}
             certificate={certificate}
             completedTasksCount={completedCount}
@@ -115,7 +110,6 @@ export default async function DashboardPage() {
           {/* Milestone 5-Step Pipeline Tracker */}
           <MilestoneProgressTracker
             completedTasksCount={completedCount}
-            isLinkedInApproved={isLinkedInApproved}
             isPaymentApproved={payment?.status === 'approved'}
             isCertificateIssued={certificate?.status === 'issued'}
           />
@@ -257,7 +251,7 @@ export default async function DashboardPage() {
                       ? 'Your ₹100 direct UPI payment has been verified by the administrator. Your completion certificate is unlocked!'
                       : payment?.status === 'pending_verification'
                       ? `Your ₹100 payment submission (UTR: ${payment.upi_reference}) is currently undergoing manual administrator verification.`
-                      : 'You have completed all 5 tasks and your LinkedIn announcement is approved! Fulfill the ₹100 direct UPI payment to claim your verified certificate.'}
+                      : 'You have completed all 5 tasks! Pay ₹100 by UPI, enter your transaction ID, and the administrator will verify it and award your certificate.'}
                   </p>
                 </div>
 
@@ -276,7 +270,7 @@ export default async function DashboardPage() {
                 </div>
               </div>
             ) : (
-              /* LOCKED STATE: User has not completed all 5 tasks and/or LinkedIn not approved */
+              /* LOCKED STATE: User has not completed all 5 tasks yet */
               <div className="p-6 bg-slate-50/70 dark:bg-slate-900/60 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4 flex flex-col justify-between">
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
@@ -298,7 +292,7 @@ export default async function DashboardPage() {
                   </div>
 
                   <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
-                    At INTERN-UP, you build first! The <strong>₹100 certificate fee</strong> will only appear once you have completed all 5 tasks and your LinkedIn announcement is approved.
+                    At INTERN-UP, you build first! The <strong>₹100 certificate fee</strong> will unlock as soon as you have submitted all 5 tasks.
                   </p>
 
                   <div className="p-3 bg-white dark:bg-slate-800/80 rounded-xl border border-slate-200/80 dark:border-slate-700 text-[11px] space-y-1.5">
@@ -306,12 +300,6 @@ export default async function DashboardPage() {
                       <span className="text-slate-600 dark:text-slate-300">Milestone Tasks (5 Required):</span>
                       <span className={completedCount === 5 ? 'font-bold text-emerald-600 dark:text-emerald-400' : 'font-semibold text-slate-700 dark:text-slate-200'}>
                         {completedCount} / 5 Submitted
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-600 dark:text-slate-300">LinkedIn Announcement:</span>
-                      <span className={isLinkedInApproved ? 'font-bold text-emerald-600 dark:text-emerald-400' : 'font-semibold text-slate-700 dark:text-slate-200'}>
-                        {isLinkedInApproved ? 'Approved' : linkedInSubmission ? 'Pending Review' : 'Not Submitted'}
                       </span>
                     </div>
                   </div>
@@ -354,11 +342,11 @@ export default async function DashboardPage() {
 
                 {eligibility.isEligible ? (
                   <p className="text-xs text-emerald-700 dark:text-emerald-400 leading-relaxed font-medium">
-                    Congratulations! All 5 tasks, LinkedIn announcement, and ₹100 payment have been verified.
+                    Congratulations! All 5 tasks are submitted and your ₹100 payment has been verified by the administrator.
                   </p>
                 ) : isReadyForPayment ? (
                   <p className="text-xs text-amber-700 dark:text-amber-400 leading-relaxed font-medium">
-                    All tasks and LinkedIn post are approved! Fulfill the ₹100 program fee to unlock and download your completion certificate.
+                    All 5 tasks are submitted! Pay the ₹100 fee and enter your transaction ID. Once the administrator verifies it, your certificate is awarded.
                   </p>
                 ) : (
                   <div className="text-[11px] text-slate-500 dark:text-slate-400 space-y-1">
@@ -367,11 +355,8 @@ export default async function DashboardPage() {
                       <li className={completedCount === 5 ? 'text-emerald-600 dark:text-emerald-400 font-medium' : ''}>
                         5/5 Tasks submitted ({completedCount}/5 done)
                       </li>
-                      <li className={isLinkedInApproved ? 'text-emerald-600 dark:text-emerald-400 font-medium' : ''}>
-                        LinkedIn announcement approved
-                      </li>
                       <li className={payment?.status === 'approved' ? 'text-emerald-600 dark:text-emerald-400 font-medium' : 'text-slate-400'}>
-                        ₹100 direct UPI fee (unlocks once above 2 are done)
+                        ₹100 UPI fee with transaction ID (unlocks after all 5 tasks, verified by admin)
                       </li>
                     </ul>
                   </div>
@@ -417,12 +402,6 @@ export default async function DashboardPage() {
               issuedAt={certificate?.issue_date}
             />
           )}
-
-          {/* LinkedIn Announcement Section */}
-          <LinkedInSubmissionSection
-            enrollmentId={enrollment.id}
-            submission={linkedInSubmission}
-          />
 
           {/* 5 Tasks Section */}
           <div className="space-y-4">

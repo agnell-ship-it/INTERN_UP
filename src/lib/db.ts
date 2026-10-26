@@ -1245,14 +1245,12 @@ export const db = {
     const domain = state.domains.find((d) => d.id === enrollment.domain_id);
     if (!domain) throw new Error('Domain not found.');
 
-    const linkedIn = state.linkedin_submissions.find((l) => l.enrollment_id === enrollmentId) || null;
     const taskSubs = state.task_submissions.filter((t) => t.enrollment_id === enrollmentId);
     const payment = state.payments.find((p) => p.enrollment_id === enrollmentId) || null;
 
     // Single source of truth eligibility evaluation
     const eligibility = calculateCertificateEligibility({
       enrollment,
-      linkedInSubmission: linkedIn,
       taskSubmissions: taskSubs,
       payment,
       isRevoked: existing?.status === 'revoked',

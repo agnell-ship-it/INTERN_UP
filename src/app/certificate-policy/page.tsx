@@ -42,15 +42,13 @@ export default function CertificatePolicyPage() {
           <h2 className="text-base font-bold text-slate-900">1. Mandatory Single Source of Truth Eligibility</h2>
           <p>
             Certificates are never automatically issued upon registration. To receive an official INTERN-UP
-            Completion Certificate, all 6 business conditions must be verified server-side:
+            Completion Certificate, all 4 business conditions must be verified server-side:
           </p>
           <ol className="list-decimal pl-5 space-y-1.5">
             <li><strong>Active Enrollment:</strong> Valid registration and completed enrollment in one of our 13 technical tracks.</li>
-            <li><strong>LinkedIn Learning Sprint Announcement:</strong> An administrator-approved public post URL documenting participation.</li>
             <li><strong>5 Verified Task Deliverables:</strong> All 5 practical milestones submitted with public, accessible GitHub repositories.</li>
             <li><strong>Direct UPI Program Fee:</strong> Confirmed ₹100 payment approved by administrative manual audit against bank UTR.</li>
-            <li><strong>Timeline Fulfillment:</strong> Completion within the 7-calendar-day window (or approved 3-day extension).</li>
-            <li><strong>Good Standing:</strong> Account and submissions free of academic dishonesty, plagiarism, or revocation flags.</li>
+                        <li><strong>Good Standing:</strong> Account and submissions free of academic dishonesty, plagiarism, or revocation flags.</li>
           </ol>
         </section>
 

@@ -30,7 +30,6 @@ export default async function PaymentPage() {
   const enrollment = await db.getActiveEnrollmentByStudentId(user.id);
   const settings = await db.getSiteSettings();
   const payment = enrollment ? await db.getPaymentByEnrollmentId(enrollment.id) : null;
-  const linkedIn = enrollment ? await db.getLinkedInSubmissionByEnrollmentId(enrollment.id) : null;
   const taskSubmissions = enrollment
     ? await db.getTaskSubmissionsByEnrollmentId(enrollment.id)
     : [];
@@ -39,9 +38,8 @@ export default async function PaymentPage() {
     (t) => t.github_url && t.github_url.trim().length > 0
   ).length;
 
-  const isLinkedInApproved = linkedIn?.status === 'approved';
   const isTasksComplete = completedTasksCount >= 5;
-  const isReadyForPayment = isTasksComplete && isLinkedInApproved;
+  const isReadyForPayment = isTasksComplete;
 
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
@@ -72,7 +70,7 @@ export default async function PaymentPage() {
             <p className="text-xs text-slate-500">
               {isReadyForPayment
                 ? 'One-time ₹100 certificate issuance and verification fee'
-                : 'Locked until all 5 tasks and LinkedIn announcement are approved'}
+                : 'Unlocks after you submit all 5 tasks'}
             </p>
           </div>
         </div>
@@ -95,7 +93,7 @@ export default async function PaymentPage() {
           </Link>
         </div>
       ) : !isReadyForPayment ? (
-        /* LOCKED STATE: When user hasn't completed all 5 tasks or LinkedIn isn't approved */
+        /* LOCKED STATE: When user hasn't submitted all 5 tasks yet */
         <div className="bg-white rounded-3xl border border-slate-200 p-8 sm:p-10 space-y-6 text-center shadow-xs">
           <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 mx-auto flex items-center justify-center">
             <Lock className="w-8 h-8" />
@@ -107,8 +105,7 @@ export default async function PaymentPage() {
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
               At INTERN-UP, you learn and build first! The <strong>₹100 certificate fee</strong> is
-              only payable once you have completed all 5 tasks and your LinkedIn announcement has
-              been verified.
+              only payable once you have submitted all 5 tasks.
             </p>
           </div>
 
@@ -135,25 +132,6 @@ export default async function PaymentPage() {
                 )}
               </div>
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Share2 className="w-4 h-4 text-slate-500" />
-                  <span className="text-slate-700">LinkedIn Announcement Approved</span>
-                </div>
-                {isLinkedInApproved ? (
-                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
-                    Approved
-                  </span>
-                ) : linkedIn?.status === 'pending_review' ? (
-                  <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold">
-                    Pending Review
-                  </span>
-                ) : (
-                  <span className="px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 text-[10px] font-bold">
-                    Not Approved
-                  </span>
-                )}
-              </div>
             </div>
           </div>
 
@@ -167,7 +145,7 @@ export default async function PaymentPage() {
           </div>
         </div>
       ) : (
-        /* UNLOCKED STATE: When user completed 5 tasks and LinkedIn is approved! */
+        /* UNLOCKED STATE: all 5 tasks submitted */
         <div className="space-y-6">
           {/* Readiness Celebration Banner */}
           <div className="p-5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-sm">
@@ -180,8 +158,8 @@ export default async function PaymentPage() {
                 Congratulations! You Have Completed All Milestones
               </h2>
               <p className="text-xs text-white/90 leading-relaxed">
-                All 5 practical tasks and your LinkedIn announcement are approved. Fulfill the final
-                ₹100 direct UPI fee below to unlock your verified completion certificate.
+                All 5 practical tasks are submitted. Pay the ₹100 fee by UPI, enter your transaction ID
+                below, and the administrator will verify it and award your certificate.
               </p>
             </div>
             <div className="shrink-0 bg-white/20 px-4 py-2 rounded-xl text-center">

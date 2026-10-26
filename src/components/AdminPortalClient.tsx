@@ -7,7 +7,6 @@ import {
   Certificate,
   Domain,
   Enrollment,
-  LinkedInSubmission,
   Payment,
   Profile,
   SiteSettings,
@@ -49,7 +48,6 @@ interface AdminPortalClientProps {
     totalStudents: number;
     activeEnrollments: number;
     completedEnrollments: number;
-    pendingLinkedIn: number;
     pendingPayments: number;
     issuedCertificates: number;
     totalDomains: number;
@@ -59,7 +57,6 @@ interface AdminPortalClientProps {
   students: Profile[];
   enrollments: Enrollment[];
   domains: Domain[];
-  pendingLinkedIn: (LinkedInSubmission & { student?: Profile; domain?: Domain })[];
   payments: (Payment & { student?: Profile; domain?: Domain })[];
   certificates: Certificate[];
   siteSettings: SiteSettings;
@@ -72,7 +69,6 @@ export const AdminPortalClient: React.FC<AdminPortalClientProps> = ({
   students,
   enrollments,
   domains,
-  pendingLinkedIn,
   payments,
   certificates,
   siteSettings,
@@ -84,7 +80,6 @@ export const AdminPortalClient: React.FC<AdminPortalClientProps> = ({
     | 'overview'
     | 'students'
     | 'reviews'
-    | 'linkedin'
     | 'payments'
     | 'domains'
     | 'certificates'
@@ -118,15 +113,9 @@ export const AdminPortalClient: React.FC<AdminPortalClientProps> = ({
   );
   const [settingsSaving, setSettingsSaving] = useState(false);
   const [settingsNotice, setSettingsNotice] = useState<string | null>(null);
-
-  // Review Modals
-  const [rejectLinkedInModal, setRejectLinkedInModal] = useState<{
-    id: string;
-    studentName?: string;
-  } | null>(null);
-  const [rejectionReason, setRejectionReason] = useState('');
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Review Modals
   const [rejectPaymentModal, setRejectPaymentModal] = useState<{
     id: string;
     studentName?: string;
@@ -192,41 +181,6 @@ export const AdminPortalClient: React.FC<AdminPortalClientProps> = ({
   };
 
   // Handlers
-  const handleApproveLinkedIn = async (id: string) => {
-    setActionLoading(true);
-    try {
-      await fetch('/api/admin/linkedin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ submission_id: id, status: 'approved' }),
-      });
-      router.refresh();
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleRejectLinkedIn = async () => {
-    if (!rejectLinkedInModal || !rejectionReason.trim()) return;
-    setActionLoading(true);
-    try {
-      await fetch('/api/admin/linkedin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          submission_id: rejectLinkedInModal.id,
-          status: 'rejected',
-          rejection_reason: rejectionReason.trim(),
-        }),
-      });
-      setRejectLinkedInModal(null);
-      setRejectionReason('');
-      router.refresh();
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
   const handleApprovePayment = async (id: string) => {
     setActionLoading(true);
     try {
@@ -354,12 +308,6 @@ export const AdminPortalClient: React.FC<AdminPortalClientProps> = ({
                 : undefined,
           },
           {
-            key: 'linkedin',
-            label: `LinkedIn (${pendingLinkedIn.length})`,
-            icon: <Share2 className="w-4 h-4" />,
-            badge: pendingLinkedIn.length > 0 ? pendingLinkedIn.length : undefined,
-          },
-          {
             key: 'payments',
             label: `Payments (${payments.filter((p) => p.status === 'pending_verification').length})`,
             icon: <IndianRupee className="w-4 h-4" />,
@@ -397,7 +345,7 @@ export const AdminPortalClient: React.FC<AdminPortalClientProps> = ({
       {/* OVERVIEW TAB */}
       {activeTab === 'overview' && (
         <div className="space-y-8">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
             <div className="p-5 bg-white rounded-2xl border border-slate-200/90 shadow-2xs space-y-1">
               <span className="text-xs text-slate-500 font-medium">Total Students</span>
               <div className="text-2xl font-bold text-slate-900">{stats.totalStudents}</div>
@@ -406,11 +354,6 @@ export const AdminPortalClient: React.FC<AdminPortalClientProps> = ({
             <div className="p-5 bg-white rounded-2xl border border-slate-200/90 shadow-2xs space-y-1">
               <span className="text-xs text-slate-500 font-medium">Active Sprints</span>
               <div className="text-2xl font-bold text-blue-600">{stats.activeEnrollments}</div>
-            </div>
-
-            <div className="p-5 bg-white rounded-2xl border border-slate-200/90 shadow-2xs space-y-1">
-              <span className="text-xs text-slate-500 font-medium">Pending LinkedIn</span>
-              <div className="text-2xl font-bold text-amber-600">{stats.pendingLinkedIn}</div>
             </div>
 
             <div className="p-5 bg-white rounded-2xl border border-slate-200/90 shadow-2xs space-y-1">
@@ -500,67 +443,48 @@ export const AdminPortalClient: React.FC<AdminPortalClientProps> = ({
               )}
             </div>
 
-            {/* Pending LinkedIn Submissions Queue */}
+            {/* Recent Task Submissions Queue */}
             <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
                 <h3 className="font-bold text-slate-900 text-sm">
-                  Pending LinkedIn Reviews ({pendingLinkedIn.length})
+                  Recent Milestone Tasks ({taskSubmissions.length})
                 </h3>
                 <button
-                  onClick={() => setActiveTab('linkedin')}
+                  onClick={() => setActiveTab('reviews')}
                   className="text-xs text-blue-600 font-medium hover:underline"
                 >
                   View All &rarr;
                 </button>
               </div>
 
-              {pendingLinkedIn.length === 0 ? (
+              {taskSubmissions.length === 0 ? (
                 <div className="text-xs text-slate-500 py-6 text-center">
-                  No pending LinkedIn submissions awaiting review.
+                  No task submissions recorded yet.
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {pendingLinkedIn.slice(0, 3).map((l) => (
+                  {taskSubmissions.slice(0, 3).map((t) => (
                     <div
-                      key={l.id}
+                      key={t.id}
                       className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between gap-3 text-xs"
                     >
-                      <div className="truncate max-w-[200px]">
-                        <div className="font-bold text-slate-900 truncate">
-                          {l.student?.full_name || 'Student'}
+                      <div>
+                        <div className="font-bold text-slate-900">
+                          {t.student?.full_name || 'Student'} ({t.domain?.name || 'Track'})
                         </div>
-                        <a
-                          href={l.post_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:underline flex items-center gap-1 truncate mt-0.5"
-                        >
-                          <span className="truncate">{l.post_url}</span>
-                          <ExternalLink className="w-3 h-3 shrink-0" />
-                        </a>
+                        <div className="text-slate-500 text-[11px] mt-0.5 truncate max-w-xs">
+                          {t.task?.title || 'Milestone Task'}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          size="sm"
-                          variant="success"
-                          onClick={() => handleApproveLinkedIn(l.id)}
-                          isLoading={actionLoading}
-                        >
-                          Approve
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="danger"
-                          onClick={() =>
-                            setRejectLinkedInModal({
-                              id: l.id,
-                              studentName: l.student?.full_name,
-                            })
-                          }
-                        >
-                          Reject
-                        </Button>
-                      </div>
+                      <a
+                        href={t.github_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 font-semibold hover:underline flex items-center gap-1 shrink-0"
+                      >
+                        <span>GitHub</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
                     </div>
                   ))}
                 </div>
@@ -830,76 +754,6 @@ export const AdminPortalClient: React.FC<AdminPortalClientProps> = ({
                     </div>
                   );
                 })}
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* LINKEDIN REVIEWS TAB */}
-      {activeTab === 'linkedin' && (
-        <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-5">
-          <div>
-            <h3 className="font-bold text-base text-slate-900">LinkedIn Announcement Queue</h3>
-            <p className="text-xs text-slate-500">
-              Open and verify student announcement posts before approving
-            </p>
-          </div>
-
-          {pendingLinkedIn.length === 0 ? (
-            <div className="p-8 text-center text-xs text-slate-500 border border-dashed border-slate-200 rounded-xl">
-              All LinkedIn submissions have been reviewed!
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {pendingLinkedIn.map((sub) => (
-                <div
-                  key={sub.id}
-                  className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs"
-                >
-                  <div className="space-y-1">
-                    <div className="font-bold text-sm text-slate-900">
-                      {sub.student?.full_name || 'Student'} ({sub.domain?.name})
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <a
-                        href={sub.post_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 font-semibold hover:underline flex items-center gap-1"
-                      >
-                        <span>Open LinkedIn Post URL</span>
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </a>
-                    </div>
-                    {sub.notes && (
-                      <div className="text-[11px] text-slate-500">Notes: {sub.notes}</div>
-                    )}
-                  </div>
-
-                  <div className="flex items-center gap-2 shrink-0">
-                    <Button
-                      size="sm"
-                      variant="success"
-                      onClick={() => handleApproveLinkedIn(sub.id)}
-                      isLoading={actionLoading}
-                    >
-                      Approve Post
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="danger"
-                      onClick={() =>
-                        setRejectLinkedInModal({
-                          id: sub.id,
-                          studentName: sub.student?.full_name,
-                        })
-                      }
-                    >
-                      Reject with Reason
-                    </Button>
-                  </div>
-                </div>
-              ))}
             </div>
           )}
         </div>
@@ -1337,45 +1191,6 @@ export const AdminPortalClient: React.FC<AdminPortalClientProps> = ({
             </table>
           </div>
         </div>
-      )}
-
-      {/* Reject LinkedIn Modal */}
-      {rejectLinkedInModal && (
-        <Modal
-          isOpen={true}
-          onClose={() => setRejectLinkedInModal(null)}
-          title="Reject LinkedIn Submission"
-          description={`Provide a clear reason for ${rejectLinkedInModal.studentName || 'student'}`}
-        >
-          <div className="space-y-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Rejection Reason *
-              </label>
-              <textarea
-                rows={3}
-                required
-                value={rejectionReason}
-                onChange={(e) => setRejectionReason(e.target.value)}
-                placeholder="e.g. Post is private or URL cannot be accessed..."
-                className="w-full px-3 py-2 text-xs rounded-lg border border-slate-300 focus:border-red-500 focus:ring-1 focus:ring-red-500"
-              />
-            </div>
-            <div className="flex items-center justify-end gap-2">
-              <Button variant="ghost" size="sm" onClick={() => setRejectLinkedInModal(null)}>
-                Cancel
-              </Button>
-              <Button
-                variant="danger"
-                size="sm"
-                onClick={handleRejectLinkedIn}
-                isLoading={actionLoading}
-              >
-                Confirm Rejection
-              </Button>
-            </div>
-          </div>
-        </Modal>
       )}
 
       {/* Reject Payment Modal */}

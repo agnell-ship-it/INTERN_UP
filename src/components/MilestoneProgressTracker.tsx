@@ -7,7 +7,6 @@ import {
   Clock,
   Award,
   FileText,
-  Share2,
   Code2,
   IndianRupee,
   ShieldCheck,
@@ -15,14 +14,12 @@ import {
 
 interface MilestoneProgressTrackerProps {
   completedTasksCount: number;
-  isLinkedInApproved: boolean;
   isPaymentApproved: boolean;
   isCertificateIssued: boolean;
 }
 
 export const MilestoneProgressTracker: React.FC<MilestoneProgressTrackerProps> = ({
   completedTasksCount,
-  isLinkedInApproved,
   isPaymentApproved,
   isCertificateIssued,
 }) => {
@@ -32,12 +29,6 @@ export const MilestoneProgressTracker: React.FC<MilestoneProgressTrackerProps> =
       sub: 'Letter Issued',
       isComplete: true,
       icon: <FileText className="w-4 h-4" />,
-    },
-    {
-      label: 'LinkedIn Post',
-      sub: isLinkedInApproved ? 'Approved' : 'Announcement',
-      isComplete: isLinkedInApproved,
-      icon: <Share2 className="w-4 h-4" />,
     },
     {
       label: '5 Tasks',
@@ -68,19 +59,18 @@ export const MilestoneProgressTracker: React.FC<MilestoneProgressTrackerProps> =
         </div>
         <span className="text-xs font-mono font-bold text-blue-600 bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200">
           {Math.round(
-            ((Number(isLinkedInApproved) +
-              Number(completedTasksCount >= 5) +
+            ((Number(completedTasksCount >= 5) +
               Number(isPaymentApproved) +
               Number(isCertificateIssued) +
               1) /
-              5) *
+              4) *
               100
           )}
           % Progress
         </span>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2">
         {steps.map((s, idx) => (
           <div
             key={s.label}

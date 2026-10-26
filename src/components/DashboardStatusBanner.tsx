@@ -13,11 +13,10 @@ import {
   Share2,
   IndianRupee,
 } from 'lucide-react';
-import { Enrollment, LinkedInSubmission, Payment, Certificate } from '@/types';
+import { Enrollment, Payment, Certificate } from '@/types';
 
 interface DashboardStatusBannerProps {
   enrollment: Enrollment;
-  linkedInSubmission?: LinkedInSubmission | null;
   payment?: Payment | null;
   certificate?: Certificate | null;
   completedTasksCount: number;
@@ -26,7 +25,6 @@ interface DashboardStatusBannerProps {
 
 export const DashboardStatusBanner: React.FC<DashboardStatusBannerProps> = ({
   enrollment,
-  linkedInSubmission,
   payment,
   certificate,
   completedTasksCount,
@@ -49,7 +47,7 @@ export const DashboardStatusBanner: React.FC<DashboardStatusBannerProps> = ({
               Congratulations! Your Completion Certificate is Unlocked
             </h3>
             <p className="text-xs text-white/90 leading-relaxed max-w-2xl">
-              All 5 practical milestones, LinkedIn announcement, and verification fee have been verified. Download your tamper-resistant PDF certificate below and showcase it on LinkedIn!
+              All 5 practical milestones are submitted and your payment has been verified by the administrator. Download your tamper-resistant PDF certificate below and showcase it on LinkedIn!
             </p>
           </div>
         </div>
@@ -130,8 +128,8 @@ export const DashboardStatusBanner: React.FC<DashboardStatusBannerProps> = ({
     );
   }
 
-  // Case 4: Milestones 5/5 + LinkedIn Approved (Ready for Payment)
-  if (completedTasksCount >= 5 && linkedInSubmission?.status === 'approved') {
+  // Case 4: Milestones 5/5 (Ready for Payment)
+  if (completedTasksCount >= 5) {
     return (
       <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 animate-in fade-in duration-300">
         <div className="flex items-start gap-3">
@@ -146,7 +144,7 @@ export const DashboardStatusBanner: React.FC<DashboardStatusBannerProps> = ({
               Milestones Complete! Pay ₹100 to Claim Your Certificate
             </h3>
             <p className="text-xs text-white/90 leading-relaxed max-w-2xl">
-              You have completed all 5 practical tasks and your LinkedIn announcement is verified. Complete the one-time ₹100 direct UPI fee to generate your completion certificate.
+              You have completed all 5 practical tasks. Pay the one-time ₹100 fee by UPI and enter your transaction ID. The administrator will verify it and award your certificate.
             </p>
           </div>
         </div>
@@ -163,49 +161,18 @@ export const DashboardStatusBanner: React.FC<DashboardStatusBannerProps> = ({
     );
   }
 
-  // Case 5: LinkedIn Rejected
-  if (linkedInSubmission?.status === 'rejected') {
-    return (
-      <div className="p-4 sm:p-5 rounded-2xl bg-red-50 border border-red-200 text-red-950 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="flex items-start gap-3">
-          <div className="p-2 rounded-xl bg-red-100 text-red-700 shrink-0 mt-0.5">
-            <AlertTriangle className="w-5 h-5" />
-          </div>
-          <div className="space-y-0.5">
-            <h3 className="font-bold text-sm text-slate-900">
-              LinkedIn Announcement Needs Revision
-            </h3>
-            <p className="text-xs text-red-700 leading-relaxed">
-              Feedback from administrator: <strong>{linkedInSubmission.rejection_reason || 'Please provide an accessible public post URL.'}</strong>
-            </p>
-          </div>
-        </div>
-
-        <a
-          href="#linkedin-section"
-          className="shrink-0 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-semibold text-xs transition-colors"
-        >
-          <span>Update Post URL</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </a>
-      </div>
-    );
-  }
-
-  // Case 6: Standard in-progress status
+  // Case 5: Standard in-progress status
   return (
     <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/90 text-slate-700 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
       <div className="flex items-center gap-2.5">
         <div className="w-2.5 h-2.5 rounded-full bg-blue-600 animate-ping" />
         <span>
-          <strong>7-Day Active Sprint</strong> &bull; Complete all 5 practical tasks and submit your LinkedIn announcement to unlock the ₹100 certificate issuance.
+          <strong>7-Day Active Sprint</strong> &bull; Complete all 5 practical tasks to unlock the ₹100 certificate payment.
         </span>
       </div>
 
       <div className="flex items-center gap-2 text-slate-500 font-mono text-[11px] shrink-0">
         <span>Tasks: {completedTasksCount}/5</span>
-        <span>&bull;</span>
-        <span>LinkedIn: {linkedInSubmission?.status === 'approved' ? '✓ Approved' : 'Pending'}</span>
       </div>
     </div>
   );

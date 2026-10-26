@@ -165,7 +165,6 @@ export interface CertificateEligibilityResult {
   reasons: string[];
   checklist: {
     hasActiveEnrollment: boolean;
-    linkedInApproved: boolean;
     allTasksSubmitted: boolean;
     submittedTasksCount: number;
     paymentApproved: boolean;

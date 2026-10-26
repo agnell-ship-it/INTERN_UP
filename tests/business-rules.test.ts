@@ -9,7 +9,7 @@ import {
   isValidLinkedInUrl,
   isValidUpiReference,
 } from '@/lib/validation';
-import { Enrollment, LinkedInSubmission, Payment, TaskSubmission } from '@/types';
+import { Enrollment, Payment, TaskSubmission } from '@/types';
 
 describe('INTERN-UP Business Rules & Integrity Tests', () => {
   describe('Domains & Tasks Integrity', () => {
@@ -83,16 +83,6 @@ describe('INTERN-UP Business Rules & Integrity Tests', () => {
       updated_at: new Date().toISOString(),
     };
 
-    const mockLinkedInApproved: LinkedInSubmission = {
-      id: 'li_1',
-      enrollment_id: 'enr_1',
-      student_id: 'usr_1',
-      post_url: 'https://www.linkedin.com/posts/student_internship_activity',
-      status: 'approved',
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
     const mock5Tasks: TaskSubmission[] = [1, 2, 3, 4, 5].map((i) => ({
       id: `ts_${i}`,
       enrollment_id: 'enr_1',
@@ -115,10 +105,9 @@ describe('INTERN-UP Business Rules & Integrity Tests', () => {
       updated_at: new Date().toISOString(),
     };
 
-    it('grants eligibility when all 5 tasks, approved linkedin, and approved payment are satisfied', () => {
+    it('grants eligibility when all 5 tasks are submitted and the payment is approved (no LinkedIn needed)', () => {
       const result = calculateCertificateEligibility({
         enrollment: mockEnrollment,
-        linkedInSubmission: mockLinkedInApproved,
         taskSubmissions: mock5Tasks,
         payment: mockPaymentApproved,
       });
@@ -126,7 +115,6 @@ describe('INTERN-UP Business Rules & Integrity Tests', () => {
       expect(result.isEligible).toBe(true);
       expect(result.reasons).toHaveLength(0);
       expect(result.checklist.allTasksSubmitted).toBe(true);
-      expect(result.checklist.linkedInApproved).toBe(true);
       expect(result.checklist.paymentApproved).toBe(true);
     });
 
@@ -134,7 +122,6 @@ describe('INTERN-UP Business Rules & Integrity Tests', () => {
       const fourTasks = mock5Tasks.slice(0, 4);
       const result = calculateCertificateEligibility({
         enrollment: mockEnrollment,
-        linkedInSubmission: mockLinkedInApproved,
         taskSubmissions: fourTasks,
         payment: mockPaymentApproved,
       });
@@ -144,25 +131,10 @@ describe('INTERN-UP Business Rules & Integrity Tests', () => {
       expect(result.reasons.some((r) => r.includes('All 5 practical tasks must be submitted'))).toBe(true);
     });
 
-    it('denies eligibility if LinkedIn submission is pending review or rejected', () => {
-      const pendingLinkedIn: LinkedInSubmission = { ...mockLinkedInApproved, status: 'pending_review' };
-      const result = calculateCertificateEligibility({
-        enrollment: mockEnrollment,
-        linkedInSubmission: pendingLinkedIn,
-        taskSubmissions: mock5Tasks,
-        payment: mockPaymentApproved,
-      });
-
-      expect(result.isEligible).toBe(false);
-      expect(result.checklist.linkedInApproved).toBe(false);
-      expect(result.reasons.some((r) => r.includes('LinkedIn'))).toBe(true);
-    });
-
     it('denies eligibility if payment is pending verification or rejected', () => {
       const pendingPayment: Payment = { ...mockPaymentApproved, status: 'pending_verification' };
       const result = calculateCertificateEligibility({
         enrollment: mockEnrollment,
-        linkedInSubmission: mockLinkedInApproved,
         taskSubmissions: mock5Tasks,
         payment: pendingPayment,
       });
@@ -175,7 +147,6 @@ describe('INTERN-UP Business Rules & Integrity Tests', () => {
     it('denies eligibility if certificate has been revoked', () => {
       const result = calculateCertificateEligibility({
         enrollment: mockEnrollment,
-        linkedInSubmission: mockLinkedInApproved,
         taskSubmissions: mock5Tasks,
         payment: mockPaymentApproved,
         isRevoked: true,
@@ -188,26 +159,15 @@ describe('INTERN-UP Business Rules & Integrity Tests', () => {
   });
 
   describe('Payment Readiness & Milestone Gating (₹100 Fee Lock)', () => {
-    const isReadyForPayment = (
-      taskCount: number,
-      linkedInStatus: 'pending_review' | 'approved' | 'rejected' | null
-    ) => {
-      return taskCount >= 5 && linkedInStatus === 'approved';
-    };
+    const isReadyForPayment = (taskCount: number) => taskCount >= 5;
 
     it('locks ₹100 payment when student has completed fewer than 5 tasks', () => {
-      expect(isReadyForPayment(0, 'approved')).toBe(false);
-      expect(isReadyForPayment(4, 'approved')).toBe(false);
+      expect(isReadyForPayment(0)).toBe(false);
+      expect(isReadyForPayment(4)).toBe(false);
     });
 
-    it('locks ₹100 payment when LinkedIn announcement is not approved', () => {
-      expect(isReadyForPayment(5, null)).toBe(false);
-      expect(isReadyForPayment(5, 'pending_review')).toBe(false);
-      expect(isReadyForPayment(5, 'rejected')).toBe(false);
-    });
-
-    it('unlocks ₹100 payment only when student has 5/5 tasks and approved LinkedIn post', () => {
-      expect(isReadyForPayment(5, 'approved')).toBe(true);
+    it('unlocks ₹100 payment as soon as student has 5/5 tasks', () => {
+      expect(isReadyForPayment(5)).toBe(true);
     });
   });
 

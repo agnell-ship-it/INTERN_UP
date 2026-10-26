@@ -23,7 +23,6 @@ export default async function AdminPage() {
     students,
     enrollments,
     domains,
-    pendingLinkedIn,
     payments,
     certificates,
     siteSettings,
@@ -34,7 +33,6 @@ export default async function AdminPage() {
     db.getAllStudents(),
     db.getAllEnrollments(),
     db.getAllDomains(false), // includes active and inactive
-    db.getAllPendingLinkedIn(),
     db.getAllPayments(),
     db.getAllCertificates(),
     db.getSiteSettings(),
@@ -74,7 +72,7 @@ export default async function AdminPage() {
         <div className="p-4 rounded-xl bg-red-50 border-2 border-red-300 text-red-900 text-sm space-y-1">
           <div className="font-extrabold">⚠ Permanent storage is NOT connected</div>
           <p className="text-xs leading-relaxed">
-            Student registrations, LinkedIn posts and payments are currently stored in temporary
+            Student registrations, task submissions and payments are currently stored in temporary
             server memory and will disappear or appear missing between requests. Add the
             <code className="mx-1 font-mono">UPSTASH_REDIS_REST_URL</code> and
             <code className="mx-1 font-mono">UPSTASH_REDIS_REST_TOKEN</code> environment variables
@@ -89,7 +87,6 @@ export default async function AdminPage() {
         students={students}
         enrollments={enrollments}
         domains={domains}
-        pendingLinkedIn={pendingLinkedIn}
         payments={payments}
         certificates={certificates}
         siteSettings={siteSettings}

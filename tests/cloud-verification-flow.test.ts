@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { calculateCertificateEligibility } from '@/lib/eligibility';
 
 describe('End-to-End Verification and Payment Flow', () => {
-  it('handles full lifecycle: task submission -> linkedin verification -> payment verification -> certificate eligibility', async () => {
+  it('handles full lifecycle: task submission -> payment (transaction ID) verification -> certificate', async () => {
     // 1. Create a test student and enrollment
     const uniqueId = `usr_test_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`;
     const student = await db.createProfile({
@@ -33,35 +33,7 @@ describe('End-to-End Verification and Payment Flow', () => {
     const taskSubs = await db.getTaskSubmissionsByEnrollmentId(enrollment.id);
     expect(taskSubs.length).toBe(5);
 
-    // 3. Student submits LinkedIn announcement
-    const liSubmission = await db.submitLinkedIn(
-      enrollment.id,
-      student.id,
-      'https://www.linkedin.com/posts/test_verify_announcement_123'
-    );
-    expect(liSubmission.status).toBe('pending_review');
-
-    // 4. Admin checks pending LinkedIn submissions
-    const pendingLinkedIn = await db.getAllPendingLinkedIn();
-    const adminFoundLi = pendingLinkedIn.find((l) => l.id === liSubmission.id);
-    expect(adminFoundLi).toBeDefined();
-    expect(adminFoundLi?.post_url).toBe(
-      'https://www.linkedin.com/posts/test_verify_announcement_123'
-    );
-
-    // 5. Admin approves LinkedIn announcement
-    const approvedLi = await db.reviewLinkedIn(
-      liSubmission.id,
-      'approved',
-      'usr_owner_target_1'
-    );
-    expect(approvedLi?.status).toBe('approved');
-
-    // Verify student sees approved status
-    const studentSeenLi = await db.getLinkedInSubmissionByEnrollmentId(enrollment.id);
-    expect(studentSeenLi?.status).toBe('approved');
-
-    // 6. Student submits ₹100 direct UPI payment
+    // 3. Student submits ₹100 direct UPI payment
     const payment = await db.submitPayment(
       enrollment.id,
       student.id,
@@ -71,13 +43,13 @@ describe('End-to-End Verification and Payment Flow', () => {
     expect(payment.status).toBe('pending_verification');
     expect(payment.upi_reference).toBe('UTR987654321098');
 
-    // 7. Admin checks pending payments
+    // 4. Admin checks pending payments
     const payments = await db.getAllPayments();
     const adminFoundPayment = payments.find((p) => p.id === payment.id);
     expect(adminFoundPayment).toBeDefined();
     expect(adminFoundPayment?.status).toBe('pending_verification');
 
-    // 8. Admin approves payment
+    // 5. Admin approves payment
     const approvedPayment = await db.reviewPayment(
       payment.id,
       'approved',
@@ -89,20 +61,18 @@ describe('End-to-End Verification and Payment Flow', () => {
     const studentSeenPayment = await db.getPaymentByEnrollmentId(enrollment.id);
     expect(studentSeenPayment?.status).toBe('approved');
 
-    // 9. Eligibility calculation
+    // 6. Eligibility calculation
     const eligibility = calculateCertificateEligibility({
       enrollment,
-      linkedInSubmission: studentSeenLi,
       taskSubmissions: taskSubs,
       payment: studentSeenPayment,
     });
     expect(eligibility.isEligible).toBe(true);
     expect(eligibility.checklist.hasActiveEnrollment).toBe(true);
-    expect(eligibility.checklist.linkedInApproved).toBe(true);
     expect(eligibility.checklist.allTasksSubmitted).toBe(true);
     expect(eligibility.checklist.paymentApproved).toBe(true);
 
-    // 10. Generate / issue certificate
+    // 7. Generate / issue certificate
     const { certificate: cert } = await db.issueCertificate(enrollment.id, student.id);
     expect(cert.certificate_id).toMatch(/^INUP-2026-/);
     expect(cert.status).toBe('issued');

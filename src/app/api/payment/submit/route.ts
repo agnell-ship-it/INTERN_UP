@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: refCheck.message }, { status: 400 });
     }
 
-    // Verify student is ready for certificate: all 5 tasks submitted & LinkedIn approved
+    // Payment unlocks once all 5 tasks are submitted
     const taskSubmissions = await db.getTaskSubmissionsByEnrollmentId(enrollment_id);
     const validTasksCount = taskSubmissions.filter(
       (t) => t.github_url && t.github_url.trim().length > 0
@@ -48,17 +48,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           error: `Payment is only unlocked when you are ready to receive your certificate. Please complete and submit all 5 tasks first (${validTasksCount}/5 submitted).`,
-        },
-        { status: 400 }
-      );
-    }
-
-    const linkedIn = await db.getLinkedInSubmissionByEnrollmentId(enrollment_id);
-    if (!linkedIn || linkedIn.status !== 'approved') {
-      return NextResponse.json(
-        {
-          error:
-            'Payment is only unlocked after your LinkedIn announcement post has been reviewed and approved by the administrator.',
         },
         { status: 400 }
       );

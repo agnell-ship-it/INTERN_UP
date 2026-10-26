@@ -193,11 +193,10 @@ export async function generateEnrollmentLetterPdf(data: EnrollmentLetterData): P
   currentY -= 18;
 
   const milestones = [
-    '1. Announcement: Publish your offer letter on LinkedIn and submit the public post URL for review.',
-    '2. Practical Execution: Complete all five (5) practical tasks assigned to your domain.',
-    '3. GitHub Verification: Submit a valid, public GitHub repository link for every completed task.',
-    '4. Administrative Fee: Fulfill the one-time INR 100 direct UPI program administration fee.',
-    '5. Certification: Upon admin verification of submissions and fee, your Completion Certificate unlocks.',
+    '1. Practical Execution: Complete all five (5) practical tasks assigned to your domain.',
+    '2. GitHub Verification: Submit a valid, public GitHub repository link for every completed task.',
+    '3. Administrative Fee: Pay the one-time INR 100 UPI fee and submit your transaction ID.',
+    '4. Certification: Once the administrator verifies your payment, your Completion Certificate is awarded.',
   ];
 
   for (const item of milestones) {
