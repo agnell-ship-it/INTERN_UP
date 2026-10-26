@@ -14,6 +14,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { Button } from './ui/Button';
+import { DomainLogo } from './DomainLogo';
 
 interface Recommendation {
   domainSlug: string;
@@ -96,6 +97,19 @@ export const SprintTrackFinder: React.FC = () => {
         technologies: ['Nmap', 'OWASP ZAP', 'Wireshark', 'Cryptography', 'Linux'],
         firstMilestone: 'Task 1: Security Reconnaissance & Port Vulnerability Mapping',
         whyMatched: 'Critical industry skillset for defensive computing and security auditing.',
+      };
+    }
+
+    if (goal === 'iot_systems' || proj === 'iot_edge') {
+      return {
+        domainSlug: 'iot',
+        domainName: 'Internet of Things',
+        tagline: 'Edge sensor simulation, telemetry message protocols (MQTT/HTTP), and live monitoring',
+        difficulty: 'Intermediate',
+        estimatedHours: '12 - 16 hrs',
+        technologies: ['ESP32/Arduino', 'MQTT', 'Python Telemetry', 'Sensors', 'Dashboard UI'],
+        firstMilestone: 'Task 1: IoT Edge Architecture & Sensor Block Modeling',
+        whyMatched: 'Your focus on smart devices and hardware telemetry connects directly to IoT industry standards.',
       };
     }
 
@@ -246,6 +260,7 @@ export const SprintTrackFinder: React.FC = () => {
               { id: 'cloud_devops', title: 'Cloud & Infrastructure', desc: 'Docker, microservices, cloud deployments' },
               { id: 'mobile_ui', title: 'Mobile & UI Design', desc: 'Android apps, responsive interfaces' },
               { id: 'security', title: 'Cybersecurity', desc: 'Security audits, network scanning, auth' },
+              { id: 'iot_systems', title: 'IoT & Smart Devices', desc: 'Edge sensors, microcontrollers, telemetry' },
             ].map((opt) => (
               <button
                 key={opt.id}
@@ -335,13 +350,18 @@ export const SprintTrackFinder: React.FC = () => {
         <div className="space-y-6">
           <div className="p-6 rounded-2xl bg-gradient-to-br from-blue-50/80 via-indigo-50/40 to-white dark:from-slate-800/80 dark:via-slate-800/40 dark:to-slate-900 border-2 border-blue-500/40 space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
-                  Recommended Track Match (100% Fit)
-                </span>
-                <h4 className="text-2xl font-extrabold text-slate-900 dark:text-white mt-0.5">
-                  {result.domainName}
-                </h4>
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 flex items-center justify-center shrink-0 shadow-xs">
+                  <DomainLogo slug={result.domainSlug} className="w-7 h-7" />
+                </div>
+                <div>
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-blue-600 dark:text-blue-400">
+                    Recommended Track Match (100% Fit)
+                  </span>
+                  <h4 className="text-2xl font-extrabold text-slate-900 dark:text-white mt-0.5">
+                    {result.domainName}
+                  </h4>
+                </div>
               </div>
 
               <div className="flex items-center gap-2">

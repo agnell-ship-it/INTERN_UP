@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="aiGrad" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#6366F1" />
+      <stop offset="50%" stopColor="#8B5CF6" />
+      <stop offset="100%" stopColor="#06B6D4" />
+    </linearGradient>
+    <linearGradient id="aiBg" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#6366F1" stopOpacity="0.15" />
+      <stop offset="100%" stopColor="#06B6D4" stopOpacity="0.08" />
+    </linearGradient>
+    <radialGradient id="aiCore" cx="24" cy="24" r="10" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#A855F7" />
+      <stop offset="100%" stopColor="#6366F1" />
+    </radialGradient>
+  </defs>
+
+  <!-- Outer Rounded Tech Housing -->
+  <rect x="5" y="5" width="38" height="38" rx="10" fill="url(#aiBg)" stroke="url(#aiGrad)" stroke-width="2" />
+
+  <!-- Processor Pin Leads -->
+  <path d="M14 5V2M24 5V2M34 5V2M14 46V43M24 46V43M34 46V43M5 14H2M5 24H2M5 34H2M46 14H43M46 24H43M46 34H43" stroke="url(#aiGrad)" stroke-width="1.8" stroke-linecap="round" />
+
+  <!-- Neural Network Interconnection Lines -->
+  <line x1="15" y1="17" x2="24" y2="24" stroke="#8B5CF6" stroke-width="1.5" stroke-opacity="0.8" />
+  <line x1="15" y1="31" x2="24" y2="24" stroke="#8B5CF6" stroke-width="1.5" stroke-opacity="0.8" />
+  <line x1="33" y1="17" x2="24" y2="24" stroke="#06B6D4" stroke-width="1.5" stroke-opacity="0.8" />
+  <line x1="33" y1="31" x2="24" y2="24" stroke="#06B6D4" stroke-width="1.5" stroke-opacity="0.8" />
+  <line x1="15" y1="17" x2="24" y2="12" stroke="#8B5CF6" stroke-width="1.2" stroke-opacity="0.6" stroke-dasharray="2 2" />
+  <line x1="33" y1="17" x2="24" y2="12" stroke="#06B6D4" stroke-width="1.2" stroke-opacity="0.6" stroke-dasharray="2 2" />
+  <line x1="15" y1="31" x2="24" y2="36" stroke="#8B5CF6" stroke-width="1.2" stroke-opacity="0.6" stroke-dasharray="2 2" />
+  <line x1="33" y1="31" x2="24" y2="36" stroke="#06B6D4" stroke-width="1.2" stroke-opacity="0.6" stroke-dasharray="2 2" />
+
+  <!-- Synaptic Nodes -->
+  <circle cx="24" cy="12" r="2.5" fill="#06B6D4" />
+  <circle cx="24" cy="36" r="2.5" fill="#06B6D4" />
+  <circle cx="15" cy="17" r="3" fill="#8B5CF6" />
+  <circle cx="15" cy="31" r="3" fill="#8B5CF6" />
+  <circle cx="33" cy="17" r="3" fill="#06B6D4" />
+  <circle cx="33" cy="31" r="3" fill="#06B6D4" />
+
+  <!-- Central AI Chip Core -->
+  <rect x="18" y="18" width="12" height="12" rx="3.5" fill="url(#aiCore)" stroke="#FFFFFF" stroke-width="1" />
+  <text x="24" y="27" text-anchor="middle" fill="#FFFFFF" font-size="8.5" font-weight="900" font-family="system-ui, -apple-system, sans-serif" letter-spacing="-0.5">AI</text>
+</svg>

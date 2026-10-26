@@ -12,6 +12,7 @@ import {
   ExternalLink,
 } from 'lucide-react';
 import { INITIAL_DOMAINS } from '@/lib/constants';
+import { DomainLogo } from './DomainLogo';
 
 interface DomainSpec {
   slug: string;
@@ -219,10 +220,17 @@ export const DomainMatrixComparison: React.FC = () => {
                 className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition-colors"
               >
                 <td className="p-4">
-                  <div className="font-bold text-slate-900 dark:text-white text-sm">
-                    {spec.name}
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
+                      <DomainLogo slug={spec.slug} className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="font-bold text-slate-900 dark:text-white text-sm">
+                        {spec.name}
+                      </div>
+                      <span className="text-[10px] text-slate-400 font-mono">5 Milestones</span>
+                    </div>
                   </div>
-                  <span className="text-[10px] text-slate-400 font-mono">5 Milestones</span>
                 </td>
                 <td className="p-4">
                   <span

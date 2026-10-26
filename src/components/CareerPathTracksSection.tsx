@@ -20,6 +20,7 @@ import {
   Flame,
 } from 'lucide-react';
 import { INITIAL_DOMAINS } from '@/lib/constants';
+import { AiLogo, CybersecurityLogo, IotLogo } from '@/components/DomainLogo';
 
 interface DomainStyleConfig {
   accentBorder: string;
@@ -51,12 +52,47 @@ const DOMAIN_STYLES: Record<string, DomainStyleConfig> = {
     icon: <Terminal className="w-6 h-6" />,
     seatsText: 'Only 2 Seats Left',
   },
+  'artificial-intelligence': {
+    accentBorder: 'border-t-violet-500',
+    iconBg: 'bg-violet-100 dark:bg-violet-950/60',
+    iconColor: 'text-violet-700 dark:text-violet-400',
+    icon: <AiLogo className="w-7 h-7" />,
+    seatsText: 'Only 2 Seats Left',
+  },
+  'ai': {
+    accentBorder: 'border-t-violet-500',
+    iconBg: 'bg-violet-100 dark:bg-violet-950/60',
+    iconColor: 'text-violet-700 dark:text-violet-400',
+    icon: <AiLogo className="w-7 h-7" />,
+    seatsText: 'Only 2 Seats Left',
+  },
+  'cybersecurity': {
+    accentBorder: 'border-t-emerald-500',
+    iconBg: 'bg-emerald-100 dark:bg-emerald-950/60',
+    iconColor: 'text-emerald-700 dark:text-emerald-400',
+    icon: <CybersecurityLogo className="w-7 h-7" />,
+    seatsText: 'Only 3 Seats Left',
+  },
   'cyber-security': {
     accentBorder: 'border-t-emerald-500',
     iconBg: 'bg-emerald-100 dark:bg-emerald-950/60',
     iconColor: 'text-emerald-700 dark:text-emerald-400',
-    icon: <Shield className="w-6 h-6" />,
+    icon: <CybersecurityLogo className="w-7 h-7" />,
     seatsText: 'Only 3 Seats Left',
+  },
+  'iot': {
+    accentBorder: 'border-t-teal-500',
+    iconBg: 'bg-teal-100 dark:bg-teal-950/60',
+    iconColor: 'text-teal-700 dark:text-teal-400',
+    icon: <IotLogo className="w-7 h-7" />,
+    seatsText: 'Only 4 Seats Left',
+  },
+  'iot-embedded-systems': {
+    accentBorder: 'border-t-teal-500',
+    iconBg: 'bg-teal-100 dark:bg-teal-950/60',
+    iconColor: 'text-teal-700 dark:text-teal-400',
+    icon: <IotLogo className="w-7 h-7" />,
+    seatsText: 'Only 4 Seats Left',
   },
   'machine-learning': {
     accentBorder: 'border-t-cyan-500',
@@ -113,13 +149,6 @@ const DOMAIN_STYLES: Record<string, DomainStyleConfig> = {
     iconColor: 'text-violet-700 dark:text-violet-400',
     icon: <Layers className="w-6 h-6" />,
     seatsText: '78% Capacity',
-  },
-  'iot-embedded-systems': {
-    accentBorder: 'border-t-lime-500',
-    iconBg: 'bg-lime-100 dark:bg-lime-950/60',
-    iconColor: 'text-lime-700 dark:text-lime-400',
-    icon: <Binary className="w-6 h-6" />,
-    seatsText: 'Only 5 Seats Left',
   },
 };
 

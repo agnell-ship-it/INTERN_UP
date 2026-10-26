@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="cyberGrad" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#059669" />
+      <stop offset="50%" stopColor="#10B981" />
+      <stop offset="100%" stopColor="#06B6D4" />
+    </linearGradient>
+    <linearGradient id="cyberBg" x1="6" y1="4" x2="42" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#059669" stopOpacity="0.18" />
+      <stop offset="100%" stopColor="#06B6D4" stopOpacity="0.08" />
+    </linearGradient>
+    <linearGradient id="lockGrad" x1="16" y1="20" x2="32" y2="36" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#10B981" />
+      <stop offset="100%" stopColor="#059669" />
+    </linearGradient>
+  </defs>
+
+  <!-- Armored Cyber Shield Perimeter -->
+  <path
+    d="M24 4L7 11V22C7 33.2 14.3 43.4 24 46C33.7 43.4 41 33.2 41 22V11L24 4Z"
+    fill="url(#cyberBg)"
+    stroke="url(#cyberGrad)"
+    stroke-width="2.2"
+    stroke-linejoin="round"
+  />
+
+  <!-- High-Tech Inner Shield Contour -->
+  <path
+    d="M24 9L12 14V21.5C12 29.8 17.1 37.5 24 40.5C30.9 37.5 36 29.8 36 21.5V14L24 9Z"
+    stroke="url(#cyberGrad)"
+    stroke-width="1.2"
+    stroke-opacity="0.5"
+    stroke-dasharray="3 2"
+  />
+
+  <!-- Top Security Antenna / Crest Node -->
+  <circle cx="24" cy="9" r="1.8" fill="#10B981" />
+
+  <!-- Padlock Shackle -->
+  <path
+    d="M19 22V17C19 14.2386 21.2386 12 24 12C26.7614 12 29 14.2386 29 17V22"
+    stroke="url(#cyberGrad)"
+    stroke-width="2.5"
+    stroke-linecap="round"
+  />
+
+  <!-- Padlock Heavy Body -->
+  <rect x="16.5" y="22" width="15" height="13" rx="3.5" fill="url(#lockGrad)" stroke="#FFFFFF" stroke-width="1" />
+
+  <!-- Keyhole Aperture -->
+  <circle cx="24" cy="27" r="1.8" fill="#FFFFFF" />
+  <path d="M23.2 27.5L22.8 31.5H25.2L24.8 27.5H23.2Z" fill="#FFFFFF" />
+</svg>

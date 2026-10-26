@@ -14,6 +14,7 @@ import {
 import { Domain, Task } from '@/types';
 import { DomainEnrollButton } from './DomainEnrollButton';
 import { getTaskDifficultyAndHours } from '@/lib/constants';
+import { DomainLogo } from './DomainLogo';
 
 interface DomainCardPublicProps {
   domain: Domain;
@@ -54,7 +55,7 @@ export const DomainCardPublic: React.FC<DomainCardPublicProps> = ({
       <div className="p-6 space-y-4">
         <div className="flex items-center justify-between">
           <div className="w-12 h-12 rounded-xl bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 flex items-center justify-center">
-            {icon || <Code2 className="w-6 h-6 text-blue-600 dark:text-blue-400" />}
+            {icon || <DomainLogo slug={domain.slug} iconName={domain.icon_name} className="w-7 h-7" />}
           </div>
           <div className="flex items-center gap-2">
             <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">

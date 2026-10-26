@@ -24,6 +24,7 @@ import { getCurrentUser } from '@/lib/auth';
 import { DomainCardPublic } from '@/components/DomainCardPublic';
 import { ReviewRubricSection } from '@/components/ReviewRubricSection';
 import { CohortUrgencyBanner } from '@/components/CohortUrgencyBanner';
+import { DomainLogo } from '@/components/DomainLogo';
 
 const iconMap: Record<string, React.ReactNode> = {
   Globe: <Globe className="w-6 h-6 text-blue-600" />,
@@ -103,7 +104,7 @@ export default async function DomainsPage() {
             key={domain.id}
             domain={domain}
             tasks={tasks}
-            icon={iconMap[domain.icon_name]}
+            icon={<DomainLogo slug={domain.slug} iconName={domain.icon_name} className="w-7 h-7" />}
             isAuthenticated={!!currentUser}
             hasActiveEnrollment={!!activeEnrollment}
             isEnrolledInThisDomain={activeEnrollment?.domain_id === domain.id}

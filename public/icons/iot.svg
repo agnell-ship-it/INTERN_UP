@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" fill="none">
+  <defs>
+    <linearGradient id="iotGrad" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#0284C7" />
+      <stop offset="50%" stopColor="#0D9488" />
+      <stop offset="100%" stopColor="#84CC16" />
+    </linearGradient>
+    <linearGradient id="iotBg" x1="4" y1="4" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#0284C7" stopOpacity="0.15" />
+      <stop offset="100%" stopColor="#84CC16" stopOpacity="0.1" />
+    </linearGradient>
+    <linearGradient id="hubGrad" x1="18" y1="18" x2="30" y2="30" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stopColor="#0284C7" />
+      <stop offset="100%" stopColor="#0D9488" />
+    </linearGradient>
+  </defs>
+
+  <!-- Outer Rounded IoT Device Housing -->
+  <rect x="5" y="5" width="38" height="38" rx="10" fill="url(#iotBg)" stroke="url(#iotGrad)" stroke-width="2" />
+
+  <!-- Radiating RF Wireless / Telemetry Waves (Top) -->
+  <path
+    d="M14 15C16.8 12.2 20.3 10.5 24 10.5C27.7 10.5 31.2 12.2 34 15"
+    stroke="url(#iotGrad)"
+    stroke-width="2.2"
+    stroke-linecap="round"
+  />
+  <path
+    d="M18 19C19.6 17.4 21.7 16.5 24 16.5C26.3 16.5 28.4 17.4 30 19"
+    stroke="url(#iotGrad)"
+    stroke-width="2"
+    stroke-linecap="round"
+  />
+
+  <!-- Sensor Edge Nodes (Smart Peripherals) -->
+  <circle cx="12" cy="33" r="3.5" fill="#0284C7" stroke="#FFFFFF" stroke-width="1" />
+  <circle cx="36" cy="33" r="3.5" fill="#84CC16" stroke="#FFFFFF" stroke-width="1" />
+
+  <!-- Peripheral Node Inner Indicators -->
+  <circle cx="12" cy="33" r="1.2" fill="#FFFFFF" />
+  <circle cx="36" cy="33" r="1.2" fill="#FFFFFF" />
+
+  <!-- Telemetry Data Bus Lines -->
+  <line x1="15" y1="31" x2="20" y2="28" stroke="url(#iotGrad)" stroke-width="1.8" stroke-dasharray="2 2" />
+  <line x1="33" y1="31" x2="28" y2="28" stroke="url(#iotGrad)" stroke-width="1.8" stroke-dasharray="2 2" />
+
+  <!-- Central Edge Gateway / Smart Microcontroller Hub -->
+  <rect x="19" y="22" width="10" height="10" rx="2.5" fill="url(#hubGrad)" stroke="#FFFFFF" stroke-width="1" />
+  <circle cx="24" cy="27" r="1.8" fill="#FFFFFF" />
+
+  <!-- Base Connection Bar & Ground Plane -->
+  <path d="M24 32V38M17 38H31" stroke="url(#iotGrad)" stroke-width="2" stroke-linecap="round" />
+</svg>

@@ -655,7 +655,7 @@ export const INITIAL_DOMAINS: SeedDomainDefinition[] = [
     name: 'Internet of Things',
     slug: 'iot',
     description: 'Understand IoT architecture, sensor data simulation, telemetry message protocols (MQTT/HTTP), and monitoring displays.',
-    icon_name: 'Cpu',
+    icon_name: 'Wifi',
     sort_order: 12,
     tasks: [
       {
