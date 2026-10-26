@@ -135,35 +135,55 @@ function initializeDefaultDatabase(): LocalDatabaseState {
   };
 }
 
-// Cloud Upstash Redis configuration for real-time multi-tenant serverless persistence across Vercel instances
-const REDIS_URL =
-  process.env.UPSTASH_REDIS_REST_URL ||
-  'https://accepted-quagga-165969.upstash.io';
-const REDIS_TOKEN =
-  process.env.UPSTASH_REDIS_REST_TOKEN ||
-  'gQAAAAAAAohRAQIgcDI4MTNlMTgyMTExNTY0ZjIzYjFiYTVlNWFhZDYzNzUxOA';
+// Cloud Upstash Redis configuration (durable storage shared across all Vercel instances).
+// Credentials come ONLY from environment variables. Vercel's Upstash integration injects
+// KV_REST_API_URL / KV_REST_API_TOKEN; a manual setup uses UPSTASH_REDIS_REST_*.
+const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL || '';
+const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN || '';
+const REDIS_KEY = 'internup_db_state';
 
+export function isPersistentStorageConfigured(): boolean {
+  // Local development and tests use the on-disk JSON file, which is durable there.
+  if (!IS_VERCEL) return true;
+  return !!(REDIS_URL && REDIS_TOKEN);
+}
+
+/**
+ * Executes a Redis command. Throws on any failure so callers can never silently
+ * continue with diverging state (the cause of "submitted but admin can't see it").
+ */
 async function redisCommand(command: any[]): Promise<any> {
-  if (!REDIS_URL || !REDIS_TOKEN) return null;
-  try {
-    const res = await fetch(REDIS_URL, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${REDIS_TOKEN}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(command),
-      cache: 'no-store',
-    });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch (err: any) {
-    if (err && (err.digest === 'DYNAMIC_SERVER_USAGE' || err.message?.includes('Dynamic server usage'))) {
-      throw err;
-    }
-    console.error('Redis command error:', err);
-    return null;
+  const res = await fetch(REDIS_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${REDIS_TOKEN}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(command),
+    cache: 'no-store',
+  });
+  if (!res.ok) {
+    throw new Error(`Storage backend error (HTTP ${res.status}). Please try again shortly.`);
   }
+  const json = await res.json();
+  if (json && json.error) {
+    throw new Error(`Storage backend error: ${json.error}`);
+  }
+  return json;
+}
+
+// Admin password: set ADMIN_PASSWORD in the environment (recommended). Falls back to the
+// legacy built-in credential only when it is not set. Hash is memoised (PBKDF2 is slow).
+const LEGACY_ADMIN_HASH =
+  'fabaa29ce40c20817a68df52fd765c1fb39ee17e5a57379edb26171bfcdaf9a181162f9641a8f92ce4ab26a0f1444a2b0cacb9868de0ffcab64a4b388c05ae4c';
+let memoAdminHash: { pw: string; hash: string } | null = null;
+function getAdminPasswordHash(salt: string): string {
+  const pw = process.env.ADMIN_PASSWORD;
+  if (!pw) return LEGACY_ADMIN_HASH;
+  if (memoAdminHash && memoAdminHash.pw === pw) return memoAdminHash.hash;
+  const hash = crypto.pbkdf2Sync(pw, salt, 10000, 64, 'sha512').toString('hex');
+  memoAdminHash = { pw, hash };
+  return hash;
 }
 
 function ensureAdminAndSeed(parsed: LocalDatabaseState): boolean {
@@ -202,9 +222,8 @@ function ensureAdminAndSeed(parsed: LocalDatabaseState): boolean {
 
     parsed.auth_credentials = parsed.auth_credentials || [];
     const adminCredIdx = parsed.auth_credentials.findIndex((c) => c.user_id === adminProfile!.id);
-    const targetHash =
-      'fabaa29ce40c20817a68df52fd765c1fb39ee17e5a57379edb26171bfcdaf9a181162f9641a8f92ce4ab26a0f1444a2b0cacb9868de0ffcab64a4b388c05ae4c';
     const targetSalt = 'a1b2c3d4e5f60718293a4b5c6d7e8f90';
+    const targetHash = getAdminPasswordHash(targetSalt);
 
     if (adminCredIdx === -1) {
       parsed.auth_credentials.push({
@@ -278,48 +297,33 @@ function writeDb(data: LocalDatabaseState) {
   } catch (err) {
     console.error('Error writing local database:', err);
   }
-
-  if (!process.env.VITEST && REDIS_URL && REDIS_TOKEN) {
-    redisCommand(['SET', 'internup_db_state', JSON.stringify(data)]).catch((err) => {
-      console.error('Background Redis sync error:', err);
-    });
-  }
 }
 
-// Asynchronous cloud database read (Upstash Redis) with local file fallback
+// Asynchronous database read. When Redis is configured it is the single source of truth;
+// a Redis failure is surfaced as an error instead of silently falling back to stale local
+// state (which could later overwrite good data).
 async function readDbAsync(): Promise<LocalDatabaseState> {
-  if (process.env.VITEST) {
+  if (process.env.VITEST || !REDIS_URL || !REDIS_TOKEN) {
     return readDbSync();
   }
 
-  if (REDIS_URL && REDIS_TOKEN) {
-    try {
-      const res = await redisCommand(['GET', 'internup_db_state']);
-      if (res && res.result) {
-        const parsed: LocalDatabaseState =
-          typeof res.result === 'string' ? JSON.parse(res.result) : res.result;
-        const modified = ensureAdminAndSeed(parsed);
-        if (modified) {
-          await writeDbAsync(parsed);
-        }
-        return parsed;
-      } else {
-        const initial = readDbSync();
-        await redisCommand(['SET', 'internup_db_state', JSON.stringify(initial)]);
-        return initial;
-      }
-    } catch (err: any) {
-      if (err && (err.digest === 'DYNAMIC_SERVER_USAGE' || err.message?.includes('Dynamic server usage'))) {
-        throw err;
-      }
-      console.error('Upstash Redis read failed, falling back to local file:', err);
+  const res = await redisCommand(['GET', REDIS_KEY]);
+  if (res && res.result) {
+    const parsed: LocalDatabaseState =
+      typeof res.result === 'string' ? JSON.parse(res.result) : res.result;
+    if (ensureAdminAndSeed(parsed)) {
+      await writeDbAsync(parsed);
     }
+    return parsed;
   }
 
-  return readDbSync();
+  // First run: seed Redis from the bundled seed data
+  const initial = readDbSync();
+  await redisCommand(['SET', REDIS_KEY, JSON.stringify(initial)]);
+  return initial;
 }
 
-// Asynchronous cloud database write (Upstash Redis + local backup)
+// Asynchronous database write. Awaited Redis write; throws if it does not succeed.
 async function writeDbAsync(data: LocalDatabaseState): Promise<void> {
   try {
     if (!fs.existsSync(DATA_DIR)) {
@@ -327,15 +331,12 @@ async function writeDbAsync(data: LocalDatabaseState): Promise<void> {
     }
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
   } catch (err) {
-    console.error('Error writing local file:', err);
+    // Read-only or ephemeral filesystems are fine when Redis is the source of truth
+    if (!REDIS_URL || !REDIS_TOKEN) console.error('Error writing local file:', err);
   }
 
   if (!process.env.VITEST && REDIS_URL && REDIS_TOKEN) {
-    try {
-      await redisCommand(['SET', 'internup_db_state', JSON.stringify(data)]);
-    } catch (err) {
-      console.error('Error syncing to Upstash Redis:', err);
-    }
+    await redisCommand(['SET', REDIS_KEY, JSON.stringify(data)]);
   }
 }
 

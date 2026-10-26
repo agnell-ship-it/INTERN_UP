@@ -24,20 +24,44 @@ export const PaymentSubmissionForm: React.FC<PaymentSubmissionFormProps> = ({
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
-  // Simple screenshot upload via local FileReader for preview
+  // Screenshot upload: resized + re-encoded as JPEG so the stored record stays small
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        setError('Screenshot image must be under 2MB.');
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      setError('Please choose an image file (PNG or JPG).');
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      setError('Screenshot image must be under 8MB.');
+      return;
+    }
+    setError('');
+    const objectUrl = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const MAX_SIDE = 900;
+      const scale = Math.min(1, MAX_SIDE / Math.max(img.width, img.height));
+      const canvas = document.createElement('canvas');
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        URL.revokeObjectURL(objectUrl);
+        setError('Could not process the image. Please try another file.');
         return;
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setScreenshotUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      setScreenshotUrl(canvas.toDataURL('image/jpeg', 0.7));
+      URL.revokeObjectURL(objectUrl);
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      setError('Could not read that image. Please try another file.');
+    };
+    img.src = objectUrl;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

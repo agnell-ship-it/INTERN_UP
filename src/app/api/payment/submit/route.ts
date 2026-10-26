@@ -19,6 +19,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (screenshot_url) {
+      const ok =
+        typeof screenshot_url === 'string' &&
+        screenshot_url.startsWith('data:image/') &&
+        screenshot_url.length <= 600_000;
+      if (!ok) {
+        return NextResponse.json(
+          { error: 'Screenshot must be an image smaller than ~400KB. Please re-select it.' },
+          { status: 400 }
+        );
+      }
+    }
+
     // Validate UTR / Reference
     const refCheck = isValidUpiReference(upi_reference);
     if (!refCheck.isValid) {

@@ -59,6 +59,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Strict separation: administrator accounts may only sign in via /admin/login
+    if (profile.role === 'admin') {
+      return NextResponse.json(
+        { error: 'Invalid email or password.' },
+        { status: 401 }
+      );
+    }
+
     const credential = await db.getUserCredentials(profile.id);
     if (!credential) {
       return NextResponse.json(

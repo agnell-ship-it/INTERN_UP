@@ -1,9 +1,8 @@
 import React from 'react';
 import Link from 'next/link';
-import { ShieldCheck, ShieldAlert, Lock, ArrowRight } from 'lucide-react';
+import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/auth';
-import { db } from '@/lib/db';
-import { COMPANY_INFO } from '@/lib/constants';
+import { db, isPersistentStorageConfigured } from '@/lib/db';
 import { AdminPortalClient } from '@/components/AdminPortalClient';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -11,53 +10,12 @@ export const revalidate = 0;
 export default async function AdminPage() {
   const user = await getCurrentUser();
 
-  // Strict Server-Side Authorization Guard
+  // Strict server-side authorization guard. Non-admins are sent to the admin
+  // sign-in page and are never shown any admin identity or hint.
   if (!user || user.role !== 'admin') {
-    return (
-      <div className="min-h-[75vh] flex items-center justify-center px-4 py-12">
-        <div className="max-w-md w-full bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-5 text-center">
-          <div className="w-12 h-12 rounded-xl bg-red-50 text-red-600 mx-auto flex items-center justify-center">
-            <Lock className="w-6 h-6" />
-          </div>
-          <div className="space-y-1">
-            <h1 className="text-xl font-bold text-slate-900">Administrator Access Required</h1>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              This area is restricted to authorized platform administrators. Ordinary student accounts
-              cannot access administrative functions.
-            </p>
-          </div>
-
-          <div className="p-4 rounded-xl bg-slate-50 border border-slate-100 text-xs text-slate-600 text-left space-y-2">
-            <div className="flex items-center gap-1.5 font-bold text-slate-800">
-              <ShieldCheck className="w-4 h-4 text-blue-600" />
-              <span>Owner Bootstrap Setup:</span>
-            </div>
-            <p className="text-[11px] leading-relaxed">
-              If you are the platform owner (
-              <span className="font-mono text-blue-700">{COMPANY_INFO.initialAdminEmail}</span>),
-              please ensure you have registered and run the one-time secure bootstrap procedure.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-2 pt-2">
-            <Link
-              href="/admin/bootstrap"
-              className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800"
-            >
-              <span>Go to Initial Admin Bootstrap</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
-            <Link
-              href="/login"
-              className="text-xs text-blue-600 hover:underline font-medium"
-            >
-              Sign in with another account
-            </Link>
-          </div>
-        </div>
-      </div>
-    );
+    redirect('/admin/login');
   }
+
 
   // Fetch all admin data
   const [
@@ -111,6 +69,19 @@ export default async function AdminPage() {
           </Link>
         </div>
       </div>
+
+      {!isPersistentStorageConfigured() && (
+        <div className="p-4 rounded-xl bg-red-50 border-2 border-red-300 text-red-900 text-sm space-y-1">
+          <div className="font-extrabold">⚠ Permanent storage is NOT connected</div>
+          <p className="text-xs leading-relaxed">
+            Student registrations, LinkedIn posts and payments are currently stored in temporary
+            server memory and will disappear or appear missing between requests. Add the
+            <code className="mx-1 font-mono">UPSTASH_REDIS_REST_URL</code> and
+            <code className="mx-1 font-mono">UPSTASH_REDIS_REST_TOKEN</code> environment variables
+            in Vercel, then redeploy.
+          </p>
+        </div>
+      )}
 
       {/* Main Admin Portal Client */}
       <AdminPortalClient

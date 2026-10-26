@@ -31,11 +31,7 @@ export default function LoginPage() {
         throw new Error(data.error || 'Login failed. Please check your credentials.');
       }
 
-      if (data.user?.role === 'admin') {
-        router.push('/admin');
-      } else {
-        router.push('/dashboard');
-      }
+      router.push('/dashboard');
       router.refresh();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Login failed.');
