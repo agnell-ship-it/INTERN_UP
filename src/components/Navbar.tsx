@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { Profile } from '@/types';
 import { ThemeToggle } from './ThemeToggle';
+import { TopUrgentTicker } from './TopUrgentTicker';
 import { LiveActivityTicker } from './LiveActivityTicker';
 import { RepoPrepKitModal } from './RepoPrepKitModal';
 
@@ -40,13 +41,11 @@ export const Navbar: React.FC<NavbarProps> = ({ currentUser }) => {
   };
 
   const navLinks = [
-    { label: 'Home', href: '/' },
-    { label: 'Domains', href: '/domains' },
-    { label: 'How It Works', href: '/how-it-works' },
     { label: 'About', href: '/about' },
-    { label: 'Registry', href: '/registry' },
+    { label: 'Domains', href: '/domains' },
+    { label: 'Workflow', href: '/how-it-works' },
+    { label: 'Verify Cert', href: '/registry' },
     { label: 'FAQ', href: '/faq' },
-    { label: 'Contact', href: '/contact' },
   ];
 
   const isActive = (href: string) => {
@@ -56,6 +55,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentUser }) => {
 
   return (
     <>
+      {/* High-urgency red marquee ticker */}
+      <TopUrgentTicker />
+
       {/* Live sprint activity feed ticker */}
       <LiveActivityTicker />
 
@@ -153,17 +155,16 @@ export const Navbar: React.FC<NavbarProps> = ({ currentUser }) => {
             ) : (
               <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800">
                 <Link
-                  href="/login"
-                  className="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  href="/register"
+                  className="px-3.5 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 >
-                  Sign In
+                  Register
                 </Link>
                 <Link
-                  href="/register"
-                  className="flex items-center gap-1 px-4 py-1.5 rounded-xl text-xs font-semibold bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 hover:from-blue-500 hover:via-indigo-500 hover:to-violet-500 text-white shadow-md shadow-indigo-500/25 active:scale-[0.98] transition-all"
+                  href="/login"
+                  className="px-5 py-2 rounded-xl text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white shadow-xs hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all"
                 >
-                  <span>Enroll Now</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
+                  Login
                 </Link>
               </div>
             )}

@@ -25,6 +25,10 @@ import {
 } from 'lucide-react';
 import { COMPANY_INFO, INITIAL_DOMAINS } from '@/lib/constants';
 import { Button } from '@/components/ui/Button';
+import { ThiranexHero } from '@/components/ThiranexHero';
+import { LivePlatformStats } from '@/components/LivePlatformStats';
+import { GovernmentAuthoritySection } from '@/components/GovernmentAuthoritySection';
+import { CareerPathTracksSection } from '@/components/CareerPathTracksSection';
 import { SprintTrackFinder } from '@/components/SprintTrackFinder';
 import { CredentialVerifierSandbox } from '@/components/CredentialVerifierSandbox';
 import { DomainMatrixComparison } from '@/components/DomainMatrixComparison';
@@ -126,81 +130,24 @@ const domainColorConfig: Record<string, { bg: string; icon: React.ReactNode; hov
 export default function HomePage() {
   return (
     <div className="flex flex-col space-y-16 sm:space-y-24 pb-20 transition-colors">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden pt-12 sm:pt-20 pb-16 mesh-gradient-hero border-b border-slate-200/70 dark:border-slate-800">
-        {/* Atmospheric ambient lighting glow */}
-        <div className="absolute -top-24 left-1/2 -translate-x-1/2 w-[650px] h-[300px] bg-gradient-to-r from-blue-500/20 via-indigo-500/15 to-purple-500/20 rounded-full blur-3xl pointer-events-none" />
+      {/* 1. High-Impact Royal Blue Hero Section (Thiranex-style) */}
+      <ThiranexHero />
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="text-center max-w-3xl mx-auto space-y-6">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-blue-500/10 via-indigo-500/10 to-violet-500/10 dark:from-blue-950/80 dark:to-indigo-950/80 border border-blue-400/40 dark:border-blue-700/60 text-blue-700 dark:text-blue-300 text-xs font-bold tracking-wide shadow-xs">
-              <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400 animate-pulse" />
-              <span>7-CALENDAR-DAY TASK-BASED SPRINT TRACK</span>
-            </div>
+      {/* 2. Massive Social Proof Stat Counters (Platform Live & Certificates Issued) */}
+      <LivePlatformStats />
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-[1.15]">
-              Build Real Software Skills Through{' '}
-              <span className="text-gradient">Structured Engineering</span> Tasks
-            </h1>
+      {/* 3. Authority & MSME Government Recognized Trust Section */}
+      <GovernmentAuthoritySection />
 
-            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl mx-auto">
-              Select one of 13 engineering domains, build five practical project milestones,
-              submit verifiable GitHub repositories, and earn digitally verifiable credentials.
-            </p>
+      {/* 4. Choose Your Career Path: 13 Technical Tracks Grid */}
+      <CareerPathTracksSection />
 
-            {/* Scarcity / Urgency Chip */}
-            <div className="pt-1 flex justify-center">
-              <CohortUrgencyBanner compact={true} />
-            </div>
-
-            {/* CTAs */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-              <Link href="/register">
-                <Button size="lg" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                  Start 7-Day Sprint
-                </Button>
-              </Link>
-              <Link href="/domains">
-                <Button variant="outline" size="lg">
-                  Explore 13 Domains
-                </Button>
-              </Link>
-            </div>
-
-            {/* Quick trust metrics with colored top accents */}
-            <div className="pt-8 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-3xl mx-auto text-left border-t border-slate-200/80 dark:border-slate-800">
-              <div className="p-4 bg-white/90 dark:bg-slate-900/90 rounded-2xl border border-slate-200/80 dark:border-slate-800 border-t-2 border-t-blue-500 shadow-xs hover:shadow-md transition-shadow">
-                <div className="text-2xl font-extrabold text-slate-900 dark:text-white">13</div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">CS Engineering Domains</div>
-              </div>
-              <div className="p-4 bg-white/90 dark:bg-slate-900/90 rounded-2xl border border-slate-200/80 dark:border-slate-800 border-t-2 border-t-indigo-500 shadow-xs hover:shadow-md transition-shadow">
-                <div className="text-2xl font-extrabold text-slate-900 dark:text-white">5 Tasks</div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Curriculum Milestones</div>
-              </div>
-              <div className="p-4 bg-white/90 dark:bg-slate-900/90 rounded-2xl border border-slate-200/80 dark:border-slate-800 border-t-2 border-t-violet-500 shadow-xs hover:shadow-md transition-shadow">
-                <div className="text-2xl font-extrabold text-slate-900 dark:text-white">7 Days</div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Strict Sprint Horizon</div>
-              </div>
-              <div className="p-4 bg-white/90 dark:bg-slate-900/90 rounded-2xl border border-slate-200/80 dark:border-slate-800 border-t-2 border-t-emerald-500 shadow-xs hover:shadow-md transition-shadow">
-                <div className="text-2xl font-extrabold text-emerald-600 dark:text-emerald-400">₹100</div>
-                <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">Direct UPI Program Fee</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Cohort Scarcity & Countdown Alert Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-6 sm:-mt-10 relative z-20">
-        <CohortUrgencyBanner />
-      </section>
-
-      {/* Interactive Sprint Track Finder */}
+      {/* 5. Interactive Sprint Track Finder */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <SprintTrackFinder />
       </section>
 
-      {/* 4-Step Journey */}
+      {/* 6. 4-Step Journey */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center max-w-2xl mx-auto mb-12 space-y-2">
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 border border-blue-200/60 dark:border-blue-800/60 text-xs font-semibold">
@@ -250,7 +197,7 @@ export default function HomePage() {
             <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-emerald-600 to-teal-500 text-white font-bold flex items-center justify-center text-sm shadow-sm shadow-emerald-500/25">
               04
             </div>
-            <h3 className="font-bold text-slate-900 dark:text-white text-base">Pay ₹100 & Get Certificate</h3>
+            <h3 className="font-bold text-slate-900 dark:text-white text-base">Pay ₹100 &amp; Get Certificate</h3>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
               Complete the ₹100 direct UPI fee. Once verified by the administrator, download your official verified completion certificate.
             </p>
@@ -264,85 +211,6 @@ export default function HomePage() {
           >
             <span>Read complete 11-step guide &rarr;</span>
           </Link>
-        </div>
-      </section>
-
-      {/* 13 Domains Showcase */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-                Curriculum Tracks
-              </span>
-              <span className="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400 text-[10px] font-extrabold uppercase border border-rose-500/20 animate-pulse">
-                Capped at 50 seats / track
-              </span>
-            </div>
-            <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
-              13 Technical Internship Domains
-            </h2>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Limited slots available per cohort to guarantee individual mentor code evaluation and feedback.
-            </p>
-          </div>
-          <Link href="/domains">
-            <Button variant="outline" size="sm">
-              View All Tasks &rarr;
-            </Button>
-          </Link>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {INITIAL_DOMAINS.map((domain) => {
-            const config = domainColorConfig[domain.icon_name] || {
-              bg: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20',
-              hoverBorder: 'hover:border-blue-500/70 hover:shadow-blue-500/10',
-              hoverText: 'group-hover:text-blue-600 dark:group-hover:text-blue-400',
-              icon: <Code2 className="w-6 h-6" />,
-            };
-            const scarcity = domainScarcityMap[domain.slug] || {
-              badge: '⚡ Fast Filling',
-              color: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
-            };
-
-            return (
-              <div
-                key={domain.slug}
-                className={`p-6 bg-white dark:bg-slate-900 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-2xs hover:shadow-lg ${config.hoverBorder} transition-all flex flex-col justify-between group`}
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className={`w-12 h-12 rounded-xl ${config.bg} flex items-center justify-center group-hover:scale-105 transition-transform shadow-xs`}>
-                      {config.icon}
-                    </div>
-                    <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold border ${scarcity.color}`}>
-                      {scarcity.badge}
-                    </span>
-                  </div>
-                  <div>
-                    <h3 className={`text-lg font-bold text-slate-900 dark:text-white ${config.hoverText} transition-colors`}>
-                      {domain.name}
-                    </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed">
-                      {domain.description}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="pt-5 mt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs">
-                  <span className="font-semibold text-slate-700 dark:text-slate-300">5 Structured Tasks</span>
-                  <Link
-                    href={`/register`}
-                    className="font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 flex items-center gap-1"
-                  >
-                    <span>Enroll</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-              </div>
-            );
-          })}
         </div>
       </section>
 

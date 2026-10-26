@@ -82,7 +82,7 @@ export default function AboutPage() {
               {COMPANY_INFO.legalEntityName}
             </h2>
             <p className="text-xs text-slate-400">
-              Incorporated under educational technology regulations &bull; Operating in Asia/Kolkata (IST)
+              Government Recognized &bull; MSME Registered (Udyam Reg: <span className="font-mono text-amber-300 font-semibold">UDYAM-TN-02-0512885</span>) &bull; Asia/Kolkata (IST)
             </p>
           </div>
 
